@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import AppError from '../utils/appError.js';
-import logger from '../utils/logger.js';
-import config from '../config/index.js';
+import AppError from '../utils/appError.util.js';
+import logger from '../utils/logger.config.js';
+import config from '../config/env.config.js';
 import { ExtendedError } from '../types/error.types.js';
 
 const sendErrorDev = (err: ExtendedError, res: Response) => {

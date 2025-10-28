@@ -7,10 +7,10 @@ import xss from 'xss-clean';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 
-import config from './config/index.js';
-import logger from './utils/logger.js';
-import AppError from './utils/appError.js';
-import { globalErrorHandler } from './middleware/errorHandler.js';
+import config from './config/env.config.js';
+import logger from './utils/logger.config.js';
+import AppError from './utils/appError.util.js';
+import { globalErrorHandler } from './middleware/error.middleware.js';
 
 const app: Express = express();
 

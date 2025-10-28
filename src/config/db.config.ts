@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import logger from '../utils/logger.js';
-import AppError from '../utils/appError.js';
-import config from './index.js';
+import logger from '../utils/logger.config.js';
+import AppError from '../utils/appError.util.js';
+import config from './env.config.js';
 
 const connectDB = async (): Promise<void> => {
   const dbUrlTemplate = config.mongo.uriTemplate;
