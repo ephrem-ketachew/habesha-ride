@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import AppError from '../utils/appError.util.js';
-import logger from '../utils/logger.config.js';
+import logger from '../config/logger.config.js';
 import config from '../config/env.config.js';
 import { ExtendedError } from '../types/error.types.js';
 

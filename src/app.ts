@@ -8,7 +8,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 
 import config from './config/env.config.js';
-import logger from './utils/logger.config.js';
+import logger from './config/logger.config.js';
 import AppError from './utils/appError.util.js';
 import { globalErrorHandler } from './middleware/error.middleware.js';
 

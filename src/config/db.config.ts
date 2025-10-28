@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import logger from '../utils/logger.config.js';
+import logger from './logger.config.js';
 import AppError from '../utils/appError.util.js';
 import config from './env.config.js';
 

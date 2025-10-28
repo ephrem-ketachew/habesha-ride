@@ -2,7 +2,7 @@ import http from 'http';
 import { v2 as cloudinary } from 'cloudinary';
 
 import config from './config/env.config.js';
-import logger from './utils/logger.config.js';
+import logger from './config/logger.config.js';
 import connectDB, { disconnectDB } from './config/db.config.js';
 
 import app from './app.js';
