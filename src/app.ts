@@ -2,15 +2,14 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
-// @ts-ignore
-import xss from 'xss-clean';
-import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 
 import config from './config/env.config.js';
 import logger from './config/logger.config.js';
 import AppError from './utils/appError.util.js';
 import { globalErrorHandler } from './middleware/error.middleware.js';
+
+import authRoutes from './routes/auth.routes.js';
 
 const app: Express = express();
 
@@ -44,8 +43,8 @@ app.use('/api', limiter);
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-app.use(mongoSanitize());
-app.use(xss());
+
+app.use('/api/v1/auth', authRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({

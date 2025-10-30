@@ -2,6 +2,7 @@ import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import validator from 'validator';
+import mongooseSanitize from 'mongoose-sanitize';
 import { IUserDocument, UserRole, UserStatus } from '../types/user.types.js';
 
 const DEFAULT_PROFILE_IMAGE =
@@ -93,7 +94,6 @@ const userSchema = new Schema<IUserDocument>(
     },
     googleId: {
       type: String,
-      sparse: true,
     },
 
     passwordChangedAt: {
@@ -131,6 +131,8 @@ const userSchema = new Schema<IUserDocument>(
     toObject: { virtuals: true },
   },
 );
+
+userSchema.plugin(mongooseSanitize);
 
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
