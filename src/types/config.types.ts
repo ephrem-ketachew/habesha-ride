@@ -41,6 +41,7 @@ export interface AppConfig {
   logLevel: 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'trace';
 
   corsOrigin: string;
+  clientUrl: string;
   mongo: MongoConfig;
   jwt: JwtConfig;
   emailFrom: string;

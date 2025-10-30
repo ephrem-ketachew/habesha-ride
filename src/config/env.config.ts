@@ -64,6 +64,8 @@ const config: AppConfig = {
 
   corsOrigin: getEnvVar('CORS_ORIGIN', isProduction, 'http://localhost:3000')!,
 
+  clientUrl: getEnvVar('CLIENT_URL', isProduction, 'http://localhost:5173')!,
+
   mongo: {
     uriTemplate: getEnvVar('DATABASE_URL', true)!,
     password: getEnvVar('DATABASE_PASSWORD', true)!,
