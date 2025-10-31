@@ -2,13 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError, z } from 'zod';
 import AppError from '../utils/appError.util.js';
 
+type ReqPart = 'body' | 'query' | 'params';
+
 export const validate =
-  (schema: z.ZodObject<any, any>) =>
+  (schema: z.ZodObject<any, any>, part: ReqPart = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      const validatedBody = schema.parse(req.body);
+      const validated = schema.parse(req[part]);
 
-      req.body = validatedBody;
+      if (part === 'body') {
+        req.body = validated;
+      }
 
       next();
     } catch (error) {
@@ -16,11 +20,10 @@ export const validate =
         const errorMessages = error.issues.map((issue) => {
           return `${issue.path.join('.')}: ${issue.message}`;
         });
-
         const message = `Invalid input data. ${errorMessages.join('. ')}`;
-
         next(new AppError(message, 400));
       } else {
+        console.error('Validation Middleware Error:', error);
         next(new AppError('Something went wrong during validation.', 500));
       }
     }

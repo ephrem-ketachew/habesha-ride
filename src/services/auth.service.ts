@@ -4,6 +4,7 @@ import { sendEmail } from '../utils/email.util.js';
 import { RegisterUserInput } from '../validation/auth.schema.js';
 import config from '../config/env.config.js';
 import logger from '../config/logger.config.js';
+import crypto from 'crypto';
 
 export const registerUser = async (input: RegisterUserInput) => {
   const existingUser = await User.findOne({
@@ -44,4 +45,23 @@ export const registerUser = async (input: RegisterUserInput) => {
   }
 
   return user;
+};
+
+export const verifyEmail = async (token: string) => {
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationTokenExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new AppError('Token is invalid or has expired.', 400);
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationTokenExpires = undefined;
+
+  await user.save();
 };

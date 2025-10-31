@@ -12,7 +12,6 @@ export const registerUserSchema = z
     firstName: z
       .string()
       .trim()
-      .min(1, 'First name is required')
       .min(2, 'First name must be at least 2 characters')
       .max(50, 'First name cannot exceed 50 characters')
       .transform(sanitizeInput)
@@ -20,7 +19,6 @@ export const registerUserSchema = z
     lastName: z
       .string()
       .trim()
-      .min(1, 'Last name is required')
       .min(2, 'Last name must be at least 2 characters')
       .max(50, 'Last name cannot exceed 50 characters')
       .transform(sanitizeInput)
@@ -51,5 +49,11 @@ export const registerUserSchema = z
     message: "Passwords don't match",
     path: ['passwordConfirm'],
   });
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Verification token is required'),
+});
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
