@@ -63,6 +63,41 @@ export const loginUserSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please provide a valid email address')
+    .toLowerCase(),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/,
+        'Password must contain 1 uppercase, 1 lowercase, 1 number, and 1 special character',
+      ),
+    passwordConfirm: z.string().min(1, 'Password confirmation is required'),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Passwords don't match",
+    path: ['passwordConfirm'],
+  });
+
+export const resetPasswordTokenSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export type ResetPasswordTokenInput = z.infer<typeof resetPasswordTokenSchema>;
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
 
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;

@@ -5,6 +5,9 @@ import {
   RegisterUserInput,
   VerifyEmailInput,
   LoginUserInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+  ResetPasswordTokenInput,
 } from '../validation/auth.schema.js';
 
 export const registerHandler = catchAsync(
@@ -50,6 +53,37 @@ export const loginHandler = catchAsync(
       data: {
         user,
       },
+    });
+  },
+);
+
+export const forgotPasswordHandler = catchAsync(
+  async (
+    req: Request<{}, {}, ForgotPasswordInput>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    await authService.forgotPassword(req.body);
+
+    res.status(200).json({
+      status: 'success',
+      message:
+        'If an account with that email exists, a reset link has been sent.',
+    });
+  },
+);
+
+export const resetPasswordHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { token } = req.params as ResetPasswordTokenInput;
+    const body = req.body as ResetPasswordInput;
+
+    await authService.resetPassword(token, body);
+
+    res.status(200).json({
+      status: 'success',
+      message:
+        'Password reset successfully. You can now log in with your new password.',
     });
   },
 );
