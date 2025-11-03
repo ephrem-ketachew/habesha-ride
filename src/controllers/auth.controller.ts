@@ -4,6 +4,7 @@ import * as authService from '../services/auth.service.js';
 import {
   RegisterUserInput,
   VerifyEmailInput,
+  LoginUserInput,
 } from '../validation/auth.schema.js';
 
 export const registerHandler = catchAsync(
@@ -31,6 +32,24 @@ export const verifyEmailHandler = catchAsync(
     res.status(200).json({
       status: 'success',
       message: 'Email verified successfully. You can now log in.',
+    });
+  },
+);
+
+export const loginHandler = catchAsync(
+  async (
+    req: Request<{}, {}, LoginUserInput>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { token, user } = await authService.loginUser(req.body);
+
+    res.status(200).json({
+      status: 'success',
+      token,
+      data: {
+        user,
+      },
     });
   },
 );

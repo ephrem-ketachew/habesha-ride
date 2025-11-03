@@ -32,6 +32,20 @@ export interface IUser {
   googleId?: string;
 }
 
+export interface PublicUserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  status: string;
+  profileImage?: string;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  createdAt: Date;
+}
 export interface IUserDocument extends IUser, Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
   hasPasswordChangedAfter(JWTTimestamp: number): boolean;
@@ -39,4 +53,5 @@ export interface IUserDocument extends IUser, Document {
   createEmailVerificationToken(): string;
   createPhoneOtp(): string;
   createPasswordResetToken(): string;
+  fullName: string;
 }
