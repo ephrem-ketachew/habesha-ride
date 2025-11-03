@@ -9,6 +9,8 @@ import logger from '../config/logger.config.js';
 import { LoginUserInput } from '../validation/auth.schema.js';
 import { signToken } from '../utils/jwt.util.js';
 import { sanitizeUserForResponse } from '../utils/user.util.js';
+import { ForgotPasswordInput } from '../validation/auth.schema.js';
+import { ResetPasswordInput } from '../validation/auth.schema.js';
 
 export const registerUser = async (input: RegisterUserInput) => {
   const existingUser = await User.findOne({
@@ -144,4 +146,72 @@ export const loginUser = async (input: LoginUserInput) => {
   const publicUser = sanitizeUserForResponse(user);
 
   return { token, user: publicUser };
+};
+
+export const forgotPassword = async (input: ForgotPasswordInput) => {
+  const user = await User.findOne({ email: input.email }).select(
+    '+passwordResetToken +passwordResetExpires',
+  );
+
+  if (!user) {
+    logger.warn(
+      `[Auth]: Password reset attempted for non-existent user: ${input.email}`,
+    );
+    return;
+  }
+
+  const resetToken = user.createPasswordResetToken();
+
+  try {
+    await user.save();
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    logger.error(err, 'Failed to save user with password reset token');
+    throw new AppError('Error saving reset token. Please try again.', 500);
+  }
+
+  try {
+    const resetURL = `${config.clientUrl}/reset-password?token=${resetToken}`;
+
+    const message = `Forgot your password? Click this link to set a new one: ${resetURL}\n\nThis link is valid for 10 minutes.`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Your Password Reset Token (Valid for 10 min)',
+      text: message,
+      html: `<p>Forgot your password? Click the link below to set a new one:</p>
+             <a href="${resetURL}" target="_blank">Reset Your Password</a>
+             <p>This link is valid for 10 minutes.</p>`,
+    });
+  } catch (emailError) {
+    logger.error(
+      emailError,
+      `Failed to send password reset email to ${user.email}`,
+    );
+    throw new AppError('Failed to send email. Please try again later.', 500);
+  }
+};
+
+export const resetPassword = async (
+  token: string,
+  input: ResetPasswordInput,
+) => {
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  }).select('+passwordChangedAt');
+
+  if (!user) {
+    throw new AppError('Token is invalid or has expired.', 400);
+  }
+
+  user.password = input.password;
+
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  await user.save();
 };
