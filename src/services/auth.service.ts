@@ -11,6 +11,7 @@ import { signToken } from '../utils/jwt.util.js';
 import { sanitizeUserForResponse } from '../utils/user.util.js';
 import { ForgotPasswordInput } from '../validation/auth.schema.js';
 import { ResetPasswordInput } from '../validation/auth.schema.js';
+import { UpdatePasswordInput } from '../validation/auth.schema.js';
 
 export const registerUser = async (input: RegisterUserInput) => {
   const existingUser = await User.findOne({
@@ -214,4 +215,28 @@ export const resetPassword = async (
   user.passwordResetExpires = undefined;
 
   await user.save();
+};
+
+export const updatePassword = async (
+  userId: string,
+  input: UpdatePasswordInput,
+) => {
+  const user = await User.findById(userId).select(
+    '+password +passwordChangedAt',
+  );
+
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+
+  if (!(await user.comparePassword(input.currentPassword))) {
+    throw new AppError('Incorrect current password.', 401);
+  }
+
+  user.password = input.password;
+
+  await user.save();
+
+  const token = signToken(user.id);
+  return token;
 };
