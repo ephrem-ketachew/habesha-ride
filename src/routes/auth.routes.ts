@@ -5,6 +5,7 @@ import {
   loginHandler,
   forgotPasswordHandler,
   resetPasswordHandler,
+  updatePasswordHandler,
 } from '../controllers/auth.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -14,7 +15,9 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   resetPasswordTokenSchema,
+  updatePasswordSchema,
 } from '../validation/auth.schema.js';
+import { protect } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
@@ -39,6 +42,13 @@ router.patch(
   validate(resetPasswordTokenSchema, 'params'),
   validate(resetPasswordSchema, 'body'),
   resetPasswordHandler,
+);
+
+router.patch(
+  '/update-password',
+  protect,
+  validate(updatePasswordSchema, 'body'),
+  updatePasswordHandler,
 );
 
 export default router;

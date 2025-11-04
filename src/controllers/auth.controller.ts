@@ -8,6 +8,7 @@ import {
   ForgotPasswordInput,
   ResetPasswordInput,
   ResetPasswordTokenInput,
+  UpdatePasswordInput,
 } from '../validation/auth.schema.js';
 
 export const registerHandler = catchAsync(
@@ -84,6 +85,22 @@ export const resetPasswordHandler = catchAsync(
       status: 'success',
       message:
         'Password reset successfully. You can now log in with your new password.',
+    });
+  },
+);
+
+export const updatePasswordHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+
+    const body = req.body as UpdatePasswordInput;
+
+    const token = await authService.updatePassword(userId, body);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password updated successfully.',
+      token,
     });
   },
 );
