@@ -31,6 +31,7 @@ interface BrevoConfig {
 interface GoogleOAuthConfig {
   clientId?: string;
   clientSecret?: string;
+  redirectUri?: string;
 }
 
 export interface AppConfig {

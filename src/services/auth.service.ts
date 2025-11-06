@@ -12,6 +12,7 @@ import { sanitizeUserForResponse } from '../utils/user.util.js';
 import { ForgotPasswordInput } from '../validation/auth.schema.js';
 import { ResetPasswordInput } from '../validation/auth.schema.js';
 import { UpdatePasswordInput } from '../validation/auth.schema.js';
+import googleClient from '../utils/google.util.js';
 
 export const registerUser = async (input: RegisterUserInput) => {
   const existingUser = await User.findOne({
@@ -239,4 +240,87 @@ export const updatePassword = async (
 
   const token = signToken(user.id);
   return token;
+};
+
+export const googleAuth = async (code: string) => {
+  let idToken: string | undefined | null;
+  let decodedCode: string;
+
+  try {
+    decodedCode = decodeURIComponent(code);
+  } catch (err: any) {
+    logger.error(
+      err,
+      'Failed to decode auth code. It might be severely malformed.',
+    );
+    throw new AppError('Malformed Google authorization code.', 400);
+  }
+
+  try {
+    const { tokens } = await googleClient.getToken(decodedCode);
+    idToken = tokens.id_token;
+  } catch (err: any) {
+    logger.error(err, 'Failed to exchange Google auth code for tokens');
+    throw new AppError('Invalid Google authorization code.', 400);
+  }
+
+  if (!idToken) {
+    throw new AppError('Could not retrieve ID token from Google.', 400);
+  }
+
+  let payload: any;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: config.googleOAuth.clientId,
+    });
+    payload = ticket.getPayload();
+  } catch (err: any) {
+    logger.error(err, 'Failed to verify Google ID token');
+    throw new AppError('Invalid Google ID token.', 401);
+  }
+
+  if (!payload || !payload.sub || !payload.email) {
+    throw new AppError('Invalid Google token payload.', 401);
+  }
+
+  let user = await User.findOne({
+    $or: [{ googleId: payload.sub }, { email: payload.email }],
+  })
+    .setOptions({ includeInactive: true })
+    .select('+active');
+
+  if (user) {
+    if (!user.active) {
+      throw new AppError('Your account is deactivated.', 403);
+    }
+    if (user.status === 'blocked') {
+      throw new AppError('Your account has been blocked.', 403);
+    }
+
+    if (!user.googleId) {
+      user.googleId = payload.sub;
+    }
+
+    if (user.googleId && !user.isEmailVerified) {
+      user.isEmailVerified = true;
+    }
+    await user.save();
+  } else {
+    user = await User.create({
+      firstName: payload.given_name || 'User',
+      lastName: payload.family_name || 'Kech',
+      email: payload.email,
+      googleId: payload.sub,
+      profileImage: payload.picture,
+      isEmailVerified: true,
+      isPhoneVerified: false,
+      status: 'pending',
+    });
+  }
+
+  const token = signToken(user.id);
+  const publicUser = sanitizeUserForResponse(user);
+
+  return { token, user: publicUser };
 };

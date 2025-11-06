@@ -6,6 +6,7 @@ import {
   forgotPasswordHandler,
   resetPasswordHandler,
   updatePasswordHandler,
+  googleAuthHandler,
 } from '../controllers/auth.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -16,6 +17,7 @@ import {
   resetPasswordSchema,
   resetPasswordTokenSchema,
   updatePasswordSchema,
+  googleAuthSchema,
 } from '../validation/auth.schema.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -50,5 +52,7 @@ router.patch(
   validate(updatePasswordSchema, 'body'),
   updatePasswordHandler,
 );
+
+router.post('/google', validate(googleAuthSchema, 'body'), googleAuthHandler);
 
 export default router;
