@@ -9,6 +9,7 @@ import {
   ResetPasswordInput,
   ResetPasswordTokenInput,
   UpdatePasswordInput,
+  GoogleAuthInput,
 } from '../validation/auth.schema.js';
 
 export const registerHandler = catchAsync(
@@ -101,6 +102,26 @@ export const updatePasswordHandler = catchAsync(
       status: 'success',
       message: 'Password updated successfully.',
       token,
+    });
+  },
+);
+
+export const googleAuthHandler = catchAsync(
+  async (
+    req: Request<{}, {}, GoogleAuthInput>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { code } = req.body;
+
+    const { token, user } = await authService.googleAuth(code);
+
+    res.status(200).json({
+      status: 'success',
+      token,
+      data: {
+        user,
+      },
     });
   },
 );

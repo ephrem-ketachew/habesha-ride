@@ -101,6 +101,7 @@ const config: AppConfig = {
   googleOAuth: {
     clientId: getEnvVar('GOOGLE_CLIENT_ID', false),
     clientSecret: getEnvVar('GOOGLE_CLIENT_SECRET', false),
+    redirectUri: getEnvVar('GOOGLE_REDIRECT_URI', false, 'postmessage'),
   },
 };
 

@@ -114,6 +114,12 @@ export const updatePasswordSchema = z
     path: ['password'],
   });
 
+export const googleAuthSchema = z.object({
+  code: z.string().min(1, 'Authorization code is required'),
+});
+
+export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
+
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

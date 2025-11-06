@@ -32,7 +32,13 @@ const userSchema = new Schema<IUserDocument>(
     },
     phoneNumber: {
       type: String,
-      required: [true, 'Phone number is required.'],
+      required: [
+        function (this: IUserDocument) {
+          return !this.googleId;
+        },
+        'Phone number is required for email/password sign-ups.',
+      ],
+      trim: true,
     },
     password: {
       type: String,
