@@ -12,6 +12,8 @@ import { globalErrorHandler } from './middleware/error.middleware.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import carRoutes from './routes/car.routes.js';
+import makeRoutes from './routes/make.routes.js';
+import modelRoutes from './routes/model.routes.js';
 
 const app: Express = express();
 
@@ -49,6 +51,8 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/cars', carRoutes);
+app.use('/api/v1/makes', makeRoutes);
+app.use('/api/v1/models', modelRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
