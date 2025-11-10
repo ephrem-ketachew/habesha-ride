@@ -23,6 +23,7 @@ export interface ICarLocation {
 
 export interface ICarPhoto {
   url: string;
+  publicId: string;
   isPrimary: boolean;
 }
 

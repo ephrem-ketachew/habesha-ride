@@ -11,6 +11,7 @@ import {
 const photoSchema = new Schema(
   {
     url: { type: String, required: true },
+    publicId: { type: String, required: true },
     isPrimary: { type: Boolean, default: false },
   },
   { _id: false },
