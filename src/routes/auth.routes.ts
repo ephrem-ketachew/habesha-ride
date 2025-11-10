@@ -7,6 +7,7 @@ import {
   resetPasswordHandler,
   updatePasswordHandler,
   googleAuthHandler,
+  logoutHandler,
 } from '../controllers/auth.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -54,5 +55,7 @@ router.patch(
 );
 
 router.post('/google', validate(googleAuthSchema, 'body'), googleAuthHandler);
+
+router.get('/logout', logoutHandler);
 
 export default router;

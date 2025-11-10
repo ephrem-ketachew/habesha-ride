@@ -27,6 +27,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dompurify": "^3.3.0",
     "dotenv": "^17.2.3",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.4",
     "@types/express-rate-limit": "^6.0.2",
