@@ -11,6 +11,14 @@ import {
   UpdatePasswordInput,
   GoogleAuthInput,
 } from '../validation/auth.schema.js';
+import config from '../config/env.config.js';
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: config.isProduction,
+  sameSite: 'strict' as 'strict',
+  maxAge: 90 * 24 * 60 * 60 * 1000,
+};
 
 export const registerHandler = catchAsync(
   async (
@@ -49,9 +57,10 @@ export const loginHandler = catchAsync(
   ) => {
     const { token, user } = await authService.loginUser(req.body);
 
+    res.cookie('jwt', token, cookieOptions);
+
     res.status(200).json({
       status: 'success',
-      token,
       data: {
         user,
       },
@@ -98,10 +107,11 @@ export const updatePasswordHandler = catchAsync(
 
     const token = await authService.updatePassword(userId, body);
 
+    res.cookie('jwt', token, cookieOptions);
+
     res.status(200).json({
       status: 'success',
       message: 'Password updated successfully.',
-      token,
     });
   },
 );
@@ -115,13 +125,29 @@ export const googleAuthHandler = catchAsync(
     const { code } = req.body;
 
     const { token, user } = await authService.googleAuth(code);
+    res.cookie('jwt', token, cookieOptions);
 
     res.status(200).json({
       status: 'success',
-      token,
       data: {
         user,
       },
+    });
+  },
+);
+
+export const logoutHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.cookie('jwt', 'loggedout', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+      secure: config.isProduction,
+      sameSite: 'strict',
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Logged out successfully.',
     });
   },
 );

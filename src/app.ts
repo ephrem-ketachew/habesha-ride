@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 import config from './config/env.config.js';
 import logger from './config/logger.config.js';
@@ -35,6 +36,8 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use(cookieParser());
 
 const limiter = rateLimit({
   windowMs: 60 * 60 * 1000,
