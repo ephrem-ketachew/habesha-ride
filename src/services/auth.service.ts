@@ -61,7 +61,7 @@ export const verifyEmail = async (token: string) => {
   const user = await User.findOne({
     emailVerificationToken: hashedToken,
     emailVerificationTokenExpires: { $gt: Date.now() },
-  });
+  }).select('+password');
 
   if (!user) {
     throw new AppError('Token is invalid or has expired.', 400);

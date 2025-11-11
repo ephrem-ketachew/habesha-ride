@@ -158,6 +158,7 @@ userSchema.virtual('fullName').get(function (this: IUserDocument) {
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
+  if (!this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   if (!this.isNew) {
     this.passwordChangedAt = new Date(Date.now() - 1000);
