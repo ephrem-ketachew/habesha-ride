@@ -15,6 +15,7 @@ import userRoutes from './routes/user.routes.js';
 import carRoutes from './routes/car.routes.js';
 import makeRoutes from './routes/make.routes.js';
 import modelRoutes from './routes/model.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 const app: Express = express();
 
@@ -56,6 +57,7 @@ app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/cars', carRoutes);
 app.use('/api/v1/makes', makeRoutes);
 app.use('/api/v1/models', modelRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({

@@ -143,6 +143,7 @@ userSchema.plugin(mongooseSanitize);
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
 userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
+userSchema.index({ firstName: 1, lastName: 1 });
 
 userSchema.index({ role: 1, status: 1 });
 

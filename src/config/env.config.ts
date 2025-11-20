@@ -62,7 +62,9 @@ const config: AppConfig = {
     defaultLogLevel,
   ) as AppConfig['logLevel'],
 
-  corsOrigin: getEnvVar('CORS_ORIGIN', isProduction, 'http://localhost:3000')!,
+  corsOrigin: getEnvVar('CORS_ORIGIN', isProduction, 'http://localhost:3000')!
+    .split(',')
+    .map((origin) => origin.trim()),
 
   clientUrl: getEnvVar('CLIENT_URL', isProduction, 'http://localhost:3000')!,
 
@@ -102,6 +104,12 @@ const config: AppConfig = {
     clientId: getEnvVar('GOOGLE_CLIENT_ID', false),
     clientSecret: getEnvVar('GOOGLE_CLIENT_SECRET', false),
     redirectUri: getEnvVar('GOOGLE_REDIRECT_URI', false, 'postmessage'),
+  },
+
+  superAdmin: {
+    email: getEnvVar('SUPER_ADMIN_EMAIL', false),
+    password: getEnvVar('SUPER_ADMIN_PASSWORD', false),
+    phone: getEnvVar('SUPER_ADMIN_PHONE', false),
   },
 };
 
