@@ -27,6 +27,11 @@ interface BrevoConfig {
   user?: string;
   smtpKey?: string;
 }
+interface SuperAdminConfig {
+  email?: string;
+  password?: string;
+  phone?: string;
+}
 
 interface GoogleOAuthConfig {
   clientId?: string;
@@ -41,7 +46,7 @@ export interface AppConfig {
 
   logLevel: 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'trace';
 
-  corsOrigin: string;
+  corsOrigin: string[];
   clientUrl: string;
   mongo: MongoConfig;
   jwt: JwtConfig;
@@ -50,4 +55,5 @@ export interface AppConfig {
   mailtrap: MailtrapConfig;
   brevo: BrevoConfig;
   googleOAuth: GoogleOAuthConfig;
+  superAdmin: SuperAdminConfig;
 }

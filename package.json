@@ -11,6 +11,7 @@
     "lint": "eslint . --ext .ts",
     "seed": "tsx src/_seeder/cars.seeder.ts",
     "seed:destroy": "tsx src/_seeder/cars.seeder.ts -d",
+    "seed:admin": "tsx src/_seeder/admin.seeder.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "keywords": [
