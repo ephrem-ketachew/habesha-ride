@@ -19,6 +19,8 @@ import adminRoutes from './routes/admin.routes.js';
 
 const app: Express = express();
 
+app.enable('trust proxy');
+
 app.use(helmet());
 
 const morganStream = {

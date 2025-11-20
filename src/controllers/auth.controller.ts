@@ -15,8 +15,8 @@ import config from '../config/env.config.js';
 
 const cookieOptions = {
   httpOnly: true,
-  secure: config.isProduction,
-  sameSite: 'strict' as 'strict',
+  secure: config.isProduction ? true : false,
+  sameSite: (config.isProduction ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 90 * 24 * 60 * 60 * 1000,
 };
 
@@ -139,10 +139,8 @@ export const googleAuthHandler = catchAsync(
 export const logoutHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     res.cookie('jwt', 'loggedout', {
+      ...cookieOptions,
       expires: new Date(Date.now() + 10 * 1000),
-      httpOnly: true,
-      secure: config.isProduction,
-      sameSite: 'strict',
     });
 
     res.status(200).json({
