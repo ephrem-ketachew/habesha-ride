@@ -67,6 +67,54 @@ export const protect = catchAsync(
   },
 );
 
+export const optionalProtect = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    let token: string | undefined;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    const decoded: any = await promisify<string, string>(Jwt.verify)(
+      token,
+      config.jwt.secret,
+    );
+
+    const currentUser = await User.findById(decoded.id)
+      .select('+passwordChangedAt +active')
+      .setOptions({ includeInactive: true });
+
+    if (!currentUser) {
+      return next();
+    }
+
+    if (currentUser.hasPasswordChangedAfter(decoded.iat)) {
+      return next();
+    }
+
+    if (!currentUser.active || currentUser.status === 'blocked') {
+      return next();
+    }
+
+    req.user = currentUser;
+    return next();
+  } catch (err) {
+    return next();
+  }
+};
+
 export const restrictTo = (...roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {

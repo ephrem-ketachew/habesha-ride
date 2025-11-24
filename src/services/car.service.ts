@@ -185,27 +185,30 @@ export const deleteCar = async (carId: string, ownerId: string) => {
 export const getAllCarsAdmin = async (query: GetCarsAdminQuery) => {
   const { status, page, limit } = query;
 
+  const pageNum = page || 1;
+  const limitNum = limit || 20;
+
   const filter: { verificationStatus?: CarVerificationStatus } = {};
   if (status) {
     filter.verificationStatus = status;
   }
 
-  const skip = (page - 1) * limit;
+  const skip = (pageNum - 1) * limitNum;
 
   const cars = await Car.find(filter)
-    .populate('owner', 'fullName email')
+    .populate('owner', 'firstName lastName email')
     .populate('make', 'name')
     .populate('vehicleModel', 'name')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
+    .limit(limitNum);
 
   const totalCars = await Car.countDocuments(filter);
 
   return {
     cars,
-    totalPages: Math.ceil(totalCars / limit),
-    currentPage: page,
+    totalPages: Math.ceil(totalCars / limitNum),
+    currentPage: pageNum,
     totalCars,
   };
 };
