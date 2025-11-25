@@ -8,6 +8,7 @@ import {
   updatePasswordHandler,
   googleAuthHandler,
   logoutHandler,
+  checkAuthHandler,
 } from '../controllers/auth.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
@@ -53,6 +54,8 @@ router.patch(
   validate(updatePasswordSchema, 'body'),
   updatePasswordHandler,
 );
+
+router.get('/me', protect, checkAuthHandler);
 
 router.post('/google', validate(googleAuthSchema, 'body'), googleAuthHandler);
 

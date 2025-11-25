@@ -36,6 +36,25 @@ export const registerHandler = catchAsync(
   },
 );
 
+export const checkAuthHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user!;
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          fullName: user.fullName,
+          profileImage: user.profileImage,
+        },
+      },
+    });
+  },
+);
+
 export const verifyEmailHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { token } = req.query as VerifyEmailInput;
