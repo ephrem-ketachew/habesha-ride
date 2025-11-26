@@ -1,5 +1,8 @@
 import { z } from 'zod';
+import { ListingStatus } from '../types/rentalListing.types.js';
 import { UserRole, UserStatus } from '../types/user.types.js';
+import { SaleStatus } from '../types/saleListing.types.js';
+import mongoose from 'mongoose';
 
 export const updateCarStatusSchema = z.object({
   status: z.enum(['approved', 'rejected'], {
@@ -37,6 +40,68 @@ export const updateUserStatusSchema = z.object({
     },
   ),
 });
+
+export const getListingsAdminSchema = z.object({
+  status: z.string().optional(),
+  page: z.coerce.number().min(1).optional().default(1),
+  limit: z.coerce.number().min(1).max(100).optional().default(20),
+});
+
+export const updateRentalListingStatusAdminSchema = z.object({
+  status: z.enum(
+    ['listed', 'unlisted', 'paused'] as [ListingStatus, ...ListingStatus[]],
+    {
+      message: 'Status is required',
+    },
+  ),
+});
+
+export const updateSaleListingStatusAdminSchema = z.object({
+  status: z.enum(
+    ['available', 'pending', 'sold'] as [SaleStatus, ...SaleStatus[]],
+    {
+      message: 'Status is required',
+    },
+  ),
+});
+
+export const createMakeSchema = z.object({
+  name: z.string().min(1, 'Make name is required').trim(),
+  logoUrl: z.string().url().optional(),
+});
+
+export const updateMakeSchema = z.object({
+  name: z.string().min(1).trim().optional(),
+  logoUrl: z.string().url().optional(),
+});
+
+export const createModelSchema = z.object({
+  name: z.string().min(1, 'Model name is required').trim(),
+  make: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+    message: 'Invalid Make ID format.',
+  }),
+});
+
+export const updateModelSchema = z.object({
+  name: z.string().min(1).trim().optional(),
+});
+
+export type UpdateModelInput = z.infer<typeof updateModelSchema>;
+
+export type CreateMakeInput = z.infer<typeof createMakeSchema>;
+
+export type UpdateMakeInput = z.infer<typeof updateMakeSchema>;
+
+export type CreateModelInput = z.infer<typeof createModelSchema>;
+
+export type GetListingsAdminQuery = z.infer<typeof getListingsAdminSchema>;
+
+export type UpdateRentalListingStatusAdminInput = z.infer<
+  typeof updateRentalListingStatusAdminSchema
+>;
+export type UpdateSaleListingStatusAdminInput = z.infer<
+  typeof updateSaleListingStatusAdminSchema
+>;
 
 export type GetUsersAdminQuery = z.infer<typeof getUsersAdminSchema>;
 

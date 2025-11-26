@@ -6,6 +6,7 @@ import {
   UpdateSaleListingInput,
   GetSaleListingsQuery,
 } from '../validation/sale.validation.js';
+import { GetListingsAdminQuery } from '../validation/admin.validation.js';
 
 export const createSaleListing = async (
   userId: string,
@@ -19,13 +20,6 @@ export const createSaleListing = async (
 
   if (car.owner!.toString() !== userId) {
     throw new AppError('You can only list cars that you own.', 403);
-  }
-
-  if (car.verificationStatus !== 'approved') {
-    throw new AppError(
-      `Cannot list this car. Status is '${car.verificationStatus}'. It must be 'approved' by an admin first.`,
-      400,
-    );
   }
 
   const existingListing = await SaleListing.findOne({ car: input.car });
@@ -249,4 +243,52 @@ export const deleteSaleListing = async (userId: string, listingId: string) => {
   }
 
   await listing.deleteOne();
+};
+
+export const getAllSaleListingsAdmin = async (query: GetListingsAdminQuery) => {
+  const { page, limit, status } = query;
+  const filter: any = {};
+
+  if (status) filter.status = status;
+
+  const listings = await SaleListing.find(filter)
+    .populate({ path: 'car', populate: ['make', 'vehicleModel'] })
+    .populate('owner', 'firstName lastName email phoneNumber')
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const total = await SaleListing.countDocuments(filter);
+
+  return { listings, total, page, totalPages: Math.ceil(total / limit) };
+};
+
+export const updateSaleListingStatus = async (id: string, status: string) => {
+  const listing = await SaleListing.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true },
+  );
+  if (!listing) throw new AppError('Sale listing not found', 404);
+  return listing;
+};
+
+export const getSaleListingByIdAdmin = async (id: string) => {
+  const listing = await SaleListing.findById(id)
+    .populate({
+      path: 'car',
+      populate: [
+        { path: 'make', select: 'name' },
+        { path: 'vehicleModel', select: 'name' },
+      ],
+    })
+    .populate(
+      'owner',
+      'firstName lastName email phoneNumber profileImage status',
+    );
+
+  if (!listing) {
+    throw new AppError('Sale listing not found.', 404);
+  }
+  return listing;
 };

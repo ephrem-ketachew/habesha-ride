@@ -1,4 +1,5 @@
 import User from '../models/user.model.js';
+import Car from '../models/car.model.js';
 import AppError from '../utils/appError.util.js';
 import { UpdateProfileInput } from '../validation/user.schema.js';
 import { UserRole, UserStatus } from '../types/user.types.js';
@@ -95,4 +96,51 @@ export const updateUserStatus = async (userId: string, status: UserStatus) => {
   await user.save();
 
   return user;
+};
+
+export const getUserByIdAdmin = async (
+  userId: string,
+  options: {
+    includeCars?: boolean;
+    carsPage?: number;
+    carsLimit?: number;
+  } = {},
+) => {
+  const { includeCars = true, carsPage = 1, carsLimit = 10 } = options;
+
+  const user = await User.findById(userId)
+    .setOptions({ includeInactive: true })
+    .select('+active +status');
+
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+
+  const result: any = { user };
+
+  if (includeCars) {
+    const skip = (carsPage - 1) * carsLimit;
+
+    const [cars, totalCars] = await Promise.all([
+      Car.find({ owner: userId })
+        .populate('make', 'name')
+        .populate('vehicleModel', 'name')
+        .populate('rentalListing', 'status ratePerDay')
+        .populate('saleListing', 'status salePrice')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(carsLimit),
+      Car.countDocuments({ owner: userId }),
+    ]);
+
+    result.cars = cars;
+    result.carsMetadata = {
+      total: totalCars,
+      page: carsPage,
+      limit: carsLimit,
+      totalPages: Math.ceil(totalCars / carsLimit),
+    };
+  }
+
+  return result;
 };

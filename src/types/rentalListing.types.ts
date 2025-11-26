@@ -14,6 +14,7 @@ export interface IRentalListing {
   deliveryFee?: number;
   minRentalDurationDays: number;
   isFeatured: boolean;
+  listingDescription: string;
 
   blockedDates: Date[];
 

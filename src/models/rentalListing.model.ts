@@ -54,6 +54,12 @@ const rentalListingSchema = new Schema<IRentalListingDocument>(
       default: 1,
       min: [1, 'Minimum duration must be at least 1 day.'],
     },
+    listingDescription: {
+      type: String,
+      required: [true, 'A description is required for the rental.'],
+      trim: true,
+      maxlength: [2000, 'Description cannot exceed 2000 characters.'],
+    },
     isFeatured: {
       type: Boolean,
       default: false,

@@ -140,6 +140,20 @@ carSchema.index({
   'homeLocation.city': 'text',
 });
 
+carSchema.virtual('rentalListing', {
+  ref: 'RentalListing',
+  localField: '_id',
+  foreignField: 'car',
+  justOne: true,
+});
+
+carSchema.virtual('saleListing', {
+  ref: 'SaleListing',
+  localField: '_id',
+  foreignField: 'car',
+  justOne: true,
+});
+
 const Car = mongoose.model<ICarDocument>('Car', carSchema);
 
 export default Car;

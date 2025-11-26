@@ -274,3 +274,21 @@ export const updateCarVerificationStatus = async (
 
   return car;
 };
+
+export const getCarByIdAdmin = async (carId: string) => {
+  const car = await Car.findById(carId)
+    .populate(
+      'owner',
+      'firstName lastName email phoneNumber status profileImage',
+    )
+    .populate('make', 'name logoUrl')
+    .populate('vehicleModel', 'name')
+    .populate('rentalListing')
+    .populate('saleListing');
+
+  if (!car) {
+    throw new AppError('Car not found.', 404);
+  }
+
+  return car;
+};

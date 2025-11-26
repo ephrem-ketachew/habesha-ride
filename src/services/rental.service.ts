@@ -6,6 +6,7 @@ import {
   UpdateRentalListingInput,
   GetRentalListingsQuery,
 } from '../validation/rental.validation.js';
+import { GetListingsAdminQuery } from '../validation/admin.validation.js';
 
 export const createRentalListing = async (
   userId: string,
@@ -245,4 +246,54 @@ export const deleteRentalListing = async (
   }
 
   await listing.deleteOne();
+};
+
+export const getAllRentalListingsAdmin = async (
+  query: GetListingsAdminQuery,
+) => {
+  const { page, limit, status } = query;
+  const filter: any = {};
+
+  if (status) filter.status = status;
+
+  const listings = await RentalListing.find(filter)
+    .populate({ path: 'car', populate: ['make', 'vehicleModel'] })
+    .populate('owner', 'firstName lastName email phoneNumber')
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const total = await RentalListing.countDocuments(filter);
+
+  return { listings, total, page, totalPages: Math.ceil(total / limit) };
+};
+
+export const updateRentalListingStatus = async (id: string, status: string) => {
+  const listing = await RentalListing.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true },
+  );
+  if (!listing) throw new AppError('Rental listing not found', 404);
+  return listing;
+};
+
+export const getRentalListingByIdAdmin = async (id: string) => {
+  const listing = await RentalListing.findById(id)
+    .populate({
+      path: 'car',
+      populate: [
+        { path: 'make', select: 'name' },
+        { path: 'vehicleModel', select: 'name' },
+      ],
+    })
+    .populate(
+      'owner',
+      'firstName lastName email phoneNumber profileImage status',
+    );
+
+  if (!listing) {
+    throw new AppError('Rental listing not found.', 404);
+  }
+  return listing;
 };

@@ -15,6 +15,10 @@ export const createRentalListingSchema = z
     deliveryAvailable: z.boolean().optional().default(false),
     deliveryFee: z.coerce.number().min(0).optional(),
     minRentalDurationDays: z.coerce.number().min(1).optional().default(1),
+    listingDescription: z
+      .string()
+      .min(10, 'Description is too short')
+      .max(2000),
   })
   .refine(
     (data) => {
@@ -37,6 +41,7 @@ export const updateRentalListingSchema = z
     deliveryAvailable: z.boolean().optional(),
     deliveryFee: z.coerce.number().min(0).optional(),
     minRentalDurationDays: z.coerce.number().min(1).optional(),
+    listingDescription: z.string().min(10).max(2000).optional(),
   })
   .refine(
     (data) => {
