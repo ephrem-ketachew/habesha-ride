@@ -1,3 +1,31 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Make:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Make ID
+ *           example: 507f1f77bcf86cd799439011
+ *         name:
+ *           type: string
+ *           description: Make (brand) name
+ *           example: Toyota
+ *         logoUrl:
+ *           type: string
+ *           description: URL to the brand logo
+ *           example: https://example.com/logos/toyota.png
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
 import mongoose, { Schema } from 'mongoose';
 import mongooseSanitize from 'mongoose-sanitize';
 import { IMakeDocument } from '../types/make.types.js';

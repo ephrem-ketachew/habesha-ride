@@ -1,3 +1,60 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     SaleListing:
+ *       type: object
+ *       required:
+ *         - car
+ *         - owner
+ *         - salePrice
+ *         - condition
+ *         - listingDescription
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Sale listing ID
+ *           example: 507f1f77bcf86cd799439011
+ *         car:
+ *           type: string
+ *           description: Car ID
+ *           example: 507f1f77bcf86cd799439012
+ *         owner:
+ *           type: string
+ *           description: Owner user ID
+ *           example: 507f1f77bcf86cd799439013
+ *         status:
+ *           type: string
+ *           enum: [available, pending, sold]
+ *           default: available
+ *           description: Sale status
+ *         salePrice:
+ *           type: number
+ *           minimum: 0
+ *           description: Sale price
+ *           example: 450000
+ *         condition:
+ *           type: string
+ *           enum: [new, used_like_new, used_good, used_fair]
+ *           description: Vehicle condition
+ *           example: used_good
+ *         listingDescription:
+ *           type: string
+ *           minLength: 10
+ *           maxLength: 2000
+ *           description: Description of the sale listing
+ *           example: "Well-maintained vehicle with complete service history"
+ *         isFeatured:
+ *           type: boolean
+ *           default: false
+ *           description: Whether this is a featured listing
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
 import mongoose, { Schema } from 'mongoose';
 import mongooseSanitize from 'mongoose-sanitize';
 import {

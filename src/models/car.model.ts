@@ -1,3 +1,135 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CarPhoto:
+ *       type: object
+ *       required:
+ *         - url
+ *         - publicId
+ *       properties:
+ *         url:
+ *           type: string
+ *           description: URL to the photo
+ *           example: https://res.cloudinary.com/example/image.jpg
+ *         publicId:
+ *           type: string
+ *           description: Cloudinary public ID
+ *           example: cars/car123_photo1
+ *         isPrimary:
+ *           type: boolean
+ *           default: false
+ *           description: Whether this is the primary photo
+ *
+ *     CarLocation:
+ *       type: object
+ *       required:
+ *         - address
+ *         - city
+ *       properties:
+ *         address:
+ *           type: string
+ *           description: Street address
+ *           example: Bole Road, near Mexican Embassy
+ *         city:
+ *           type: string
+ *           description: City name
+ *           example: Addis Ababa
+ *
+ *     Car:
+ *       type: object
+ *       required:
+ *         - owner
+ *         - make
+ *         - vehicleModel
+ *         - year
+ *         - licensePlate
+ *         - homeLocation
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Car ID
+ *           example: 507f1f77bcf86cd799439011
+ *         owner:
+ *           type: string
+ *           description: Owner user ID
+ *           example: 507f1f77bcf86cd799439011
+ *         make:
+ *           type: string
+ *           description: Make (brand) ID
+ *           example: 507f1f77bcf86cd799439012
+ *         vehicleModel:
+ *           type: string
+ *           description: Model ID
+ *           example: 507f1f77bcf86cd799439013
+ *         year:
+ *           type: integer
+ *           minimum: 1900
+ *           description: Manufacturing year
+ *           example: 2022
+ *         licensePlate:
+ *           type: string
+ *           description: License plate number
+ *           example: AA-12345
+ *         vin:
+ *           type: string
+ *           description: Vehicle Identification Number
+ *           example: 1HGBH41JXMN109186
+ *         bodyType:
+ *           type: string
+ *           enum: [sedan, suv, truck, hatchback, coupe, van, other]
+ *           description: Body type of the vehicle
+ *           example: sedan
+ *         color:
+ *           type: string
+ *           description: Vehicle color
+ *           example: Black
+ *         transmission:
+ *           type: string
+ *           enum: [automatic, manual]
+ *           description: Transmission type
+ *           example: automatic
+ *         fuelType:
+ *           type: string
+ *           enum: [gasoline, diesel, electric, hybrid]
+ *           description: Fuel type
+ *           example: gasoline
+ *         seatingCapacity:
+ *           type: integer
+ *           minimum: 1
+ *           description: Number of seats
+ *           example: 5
+ *         mileage:
+ *           type: number
+ *           minimum: 0
+ *           description: Current mileage in kilometers
+ *           example: 45000
+ *         features:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of features
+ *           example: ["Air Conditioning", "Bluetooth", "Backup Camera"]
+ *         photos:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/CarPhoto'
+ *           minItems: 1
+ *           maxItems: 10
+ *         homeLocation:
+ *           $ref: '#/components/schemas/CarLocation'
+ *         verificationStatus:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *           default: pending
+ *           description: Verification status by admin
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
 import mongoose, { Schema } from 'mongoose';
 import mongooseSanitize from 'mongoose-sanitize';
 import {

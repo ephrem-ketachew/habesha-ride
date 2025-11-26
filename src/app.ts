@@ -4,9 +4,11 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 
 import config from './config/env.config.js';
 import logger from './config/logger.config.js';
+import swaggerSpec from './config/swagger.js';
 import AppError from './utils/appError.util.js';
 import { globalErrorHandler } from './middleware/error.middleware.js';
 
@@ -57,6 +59,8 @@ const limiter = rateLimit({
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/user', userRoutes);

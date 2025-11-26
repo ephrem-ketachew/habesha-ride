@@ -1,3 +1,80 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     RentalListing:
+ *       type: object
+ *       required:
+ *         - car
+ *         - owner
+ *         - ratePerDay
+ *         - listingDescription
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Rental listing ID
+ *           example: 507f1f77bcf86cd799439011
+ *         car:
+ *           type: string
+ *           description: Car ID
+ *           example: 507f1f77bcf86cd799439012
+ *         owner:
+ *           type: string
+ *           description: Owner user ID
+ *           example: 507f1f77bcf86cd799439013
+ *         status:
+ *           type: string
+ *           enum: [listed, unlisted, paused]
+ *           default: listed
+ *           description: Listing status
+ *         ratePerDay:
+ *           type: number
+ *           minimum: 0
+ *           description: Daily rental rate
+ *           example: 2500
+ *         ratePerHour:
+ *           type: number
+ *           minimum: 0
+ *           description: Hourly rental rate (optional)
+ *           example: 150
+ *         deliveryAvailable:
+ *           type: boolean
+ *           default: false
+ *           description: Whether delivery is available
+ *         deliveryFee:
+ *           type: number
+ *           minimum: 0
+ *           description: Delivery fee (required if deliveryAvailable is true)
+ *           example: 300
+ *         minRentalDurationDays:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *           description: Minimum rental duration in days
+ *         listingDescription:
+ *           type: string
+ *           minLength: 10
+ *           maxLength: 2000
+ *           description: Description of the rental listing
+ *           example: "Well maintained sedan, perfect for city driving"
+ *         isFeatured:
+ *           type: boolean
+ *           default: false
+ *           description: Whether this is a featured listing
+ *         blockedDates:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: date
+ *           description: Dates when the car is not available
+ *           example: ["2024-01-15", "2024-01-16"]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
 import mongoose, { Schema } from 'mongoose';
 import mongooseSanitize from 'mongoose-sanitize';
 import {

@@ -1,3 +1,73 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - firstName
+ *         - lastName
+ *         - email
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: User ID
+ *           example: 507f1f77bcf86cd799439011
+ *         firstName:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 50
+ *           description: User's first name
+ *           example: John
+ *         lastName:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 50
+ *           description: User's last name
+ *           example: Doe
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's email address
+ *           example: john.doe@example.com
+ *         phoneNumber:
+ *           type: string
+ *           description: User's phone number
+ *           example: "+251911234567"
+ *         role:
+ *           type: string
+ *           enum: [user, admin, superadmin]
+ *           default: user
+ *           description: User role
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, blocked]
+ *           default: pending
+ *           description: User account status
+ *         profileImage:
+ *           type: string
+ *           description: URL to user's profile image
+ *           example: https://res.cloudinary.com/dxhkryxzk/image/upload/v1755980278/avatar2_bkwawy.png
+ *         isEmailVerified:
+ *           type: boolean
+ *           default: false
+ *           description: Email verification status
+ *         isPhoneVerified:
+ *           type: boolean
+ *           default: false
+ *           description: Phone verification status
+ *         googleId:
+ *           type: string
+ *           description: Google OAuth ID
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Account creation timestamp
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Last update timestamp
+ */
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
