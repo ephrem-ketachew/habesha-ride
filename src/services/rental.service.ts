@@ -43,7 +43,12 @@ export const getMyRentalListings = async (userId: string) => {
   const listings = await RentalListing.find({ owner: userId })
     .populate({
       path: 'car',
-      populate: ['make', 'vehicleModel'],
+      populate: [
+        { path: 'make' },
+        { path: 'vehicleModel' },
+        { path: 'homeLocation.city' },
+        { path: 'features' },
+      ],
     })
     .sort({ createdAt: -1 });
   return listings;
@@ -90,11 +95,22 @@ export const getPublicRentalListings = async (
   ];
 
   if (city) {
-    pipeline.push({
-      $match: {
-        'carData.homeLocation.city': { $regex: city, $options: 'i' },
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'cities',
+          localField: 'carData.homeLocation.city',
+          foreignField: '_id',
+          as: 'cityData',
+        },
       },
-    });
+      { $unwind: '$cityData' },
+      {
+        $match: {
+          'cityData.name': { $regex: city, $options: 'i' },
+        },
+      },
+    );
   }
 
   pipeline.push(
@@ -184,7 +200,12 @@ export const getRentalListingById = async (id: string, viewerId?: string) => {
   const listing = await RentalListing.findById(id)
     .populate({
       path: 'car',
-      populate: ['make', 'vehicleModel'],
+      populate: [
+        { path: 'make' },
+        { path: 'vehicleModel' },
+        { path: 'homeLocation.city' },
+        { path: 'features' },
+      ],
     })
     .populate('owner', 'firstName lastName profileImage createdAt');
 
@@ -257,7 +278,15 @@ export const getAllRentalListingsAdmin = async (
   if (status) filter.status = status;
 
   const listings = await RentalListing.find(filter)
-    .populate({ path: 'car', populate: ['make', 'vehicleModel'] })
+    .populate({
+      path: 'car',
+      populate: [
+        { path: 'make' },
+        { path: 'vehicleModel' },
+        { path: 'homeLocation.city' },
+        { path: 'features' },
+      ],
+    })
     .populate('owner', 'firstName lastName email phoneNumber')
     .skip((page - 1) * limit)
     .limit(limit)
@@ -285,6 +314,8 @@ export const getRentalListingByIdAdmin = async (id: string) => {
       populate: [
         { path: 'make', select: 'name' },
         { path: 'vehicleModel', select: 'name' },
+        { path: 'homeLocation.city', select: 'name region' },
+        { path: 'features', select: 'name' },
       ],
     })
     .populate(

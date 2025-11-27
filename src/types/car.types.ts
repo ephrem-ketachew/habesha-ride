@@ -1,7 +1,9 @@
-import { Document, PopulatedDoc } from 'mongoose';
+import { Document, PopulatedDoc, Types } from 'mongoose';
 import { IUserDocument } from './user.types.js';
 import { IMakeDocument } from './make.types.js';
 import { IVehicleModelDocument } from './vehicleModel.types.js';
+import { ICityDocument } from './city.types.js';
+import { IFeatureDocument } from './feature.types.js';
 
 export type BodyType =
   | 'sedan'
@@ -11,14 +13,41 @@ export type BodyType =
   | 'coupe'
   | 'van'
   | 'other';
+
+export type CarGenericColor =
+  | 'Black'
+  | 'White'
+  | 'Silver'
+  | 'Grey'
+  | 'Blue'
+  | 'Red'
+  | 'Brown'
+  | 'Green'
+  | 'Beige'
+  | 'Orange'
+  | 'Gold'
+  | 'Yellow'
+  | 'Purple'
+  | 'Bronze'
+  | 'Burgundy'
+  | 'Other';
+
 export type TransmissionType = 'automatic' | 'manual';
 export type FuelType = 'gasoline' | 'diesel' | 'electric' | 'hybrid';
+
+export enum CarCondition {
+  NEW = 'new',
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+}
 
 export type CarVerificationStatus = 'pending' | 'approved' | 'rejected';
 
 export interface ICarLocation {
+  city: Types.ObjectId | ICityDocument | string;
   address: string;
-  city: string;
 }
 
 export interface ICarPhoto {
@@ -37,12 +66,15 @@ export interface ICar {
 
   bodyType?: BodyType;
   color?: string;
+  genericColor: CarGenericColor;
   transmission?: TransmissionType;
   fuelType?: FuelType;
   seatingCapacity?: number;
   mileage?: number;
+  condition: CarCondition;
+  accidentHistory: boolean;
 
-  features?: string[];
+  features?: Array<Types.ObjectId | IFeatureDocument>;
   photos: ICarPhoto[];
 
   homeLocation: ICarLocation;

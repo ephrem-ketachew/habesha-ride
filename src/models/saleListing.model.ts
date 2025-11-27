@@ -8,7 +8,6 @@
  *         - car
  *         - owner
  *         - salePrice
- *         - condition
  *         - listingDescription
  *       properties:
  *         _id:
@@ -33,11 +32,6 @@
  *           minimum: 0
  *           description: Sale price
  *           example: 450000
- *         condition:
- *           type: string
- *           enum: [new, used_like_new, used_good, used_fair]
- *           description: Vehicle condition
- *           example: used_good
  *         listingDescription:
  *           type: string
  *           minLength: 10
@@ -60,7 +54,6 @@ import mongooseSanitize from 'mongoose-sanitize';
 import {
   ISaleListingDocument,
   SaleStatus,
-  VehicleCondition,
 } from '../types/saleListing.types.js';
 
 const saleListingSchema = new Schema<ISaleListingDocument>(
@@ -88,18 +81,6 @@ const saleListingSchema = new Schema<ISaleListingDocument>(
       type: Number,
       required: [true, 'Sale price is required.'],
       min: [0, 'Price cannot be negative.'],
-    },
-    condition: {
-      type: String,
-      enum: {
-        values: [
-          'new',
-          'used_like_new',
-          'used_good',
-          'used_fair',
-        ] as VehicleCondition[],
-      },
-      required: [true, 'Vehicle condition is required.'],
     },
     listingDescription: {
       type: String,

@@ -37,6 +37,8 @@ export const getMyCars = async (ownerId: string) => {
   const cars = await Car.find({ owner: ownerId })
     .populate('make')
     .populate('vehicleModel')
+    .populate('homeLocation.city')
+    .populate('features')
     .sort({ createdAt: -1 });
   return cars;
 };
@@ -44,7 +46,9 @@ export const getMyCars = async (ownerId: string) => {
 export const getCarById = async (carId: string, ownerId: string) => {
   const car = await Car.findById(carId)
     .populate('make')
-    .populate('vehicleModel');
+    .populate('vehicleModel')
+    .populate('homeLocation.city')
+    .populate('features');
 
   if (!car) {
     throw new AppError('No car found with that ID.', 404);
@@ -199,6 +203,8 @@ export const getAllCarsAdmin = async (query: GetCarsAdminQuery) => {
     .populate('owner', 'firstName lastName email')
     .populate('make', 'name')
     .populate('vehicleModel', 'name')
+    .populate('homeLocation.city', 'name region')
+    .populate('features', 'name')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limitNum);
@@ -283,6 +289,8 @@ export const getCarByIdAdmin = async (carId: string) => {
     )
     .populate('make', 'name logoUrl')
     .populate('vehicleModel', 'name')
+    .populate('homeLocation.city', 'name region')
+    .populate('features', 'name')
     .populate('rentalListing')
     .populate('saleListing');
 

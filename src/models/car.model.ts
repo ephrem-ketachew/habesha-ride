@@ -29,12 +29,12 @@
  *       properties:
  *         address:
  *           type: string
- *           description: Street address
- *           example: Bole Road, near Mexican Embassy
+ *           description: Specific address details
+ *           example: Bole, near Edna Mall
  *         city:
  *           type: string
- *           description: City name
- *           example: Addis Ababa
+ *           description: City ID (ObjectId reference)
+ *           example: 507f1f77bcf86cd799439011
  *
  *     Car:
  *       type: object
@@ -82,8 +82,13 @@
  *           example: sedan
  *         color:
  *           type: string
- *           description: Vehicle color
- *           example: Black
+ *           description: Specific manufacturer color name (e.g., 'Midnight Blue')
+ *           example: Midnight Blue
+ *         genericColor:
+ *           type: string
+ *           enum: [Black, White, Silver, Grey, Blue, Red, Brown, Green, Beige, Orange, Gold, Yellow, Purple, Bronze, Burgundy, Other]
+ *           description: Generic color category for filtering
+ *           example: Blue
  *         transmission:
  *           type: string
  *           enum: [automatic, manual]
@@ -104,12 +109,27 @@
  *           minimum: 0
  *           description: Current mileage in kilometers
  *           example: 45000
+ *         condition:
+ *           type: string
+ *           enum: [new, excellent, good, fair, poor]
+ *           default: good
+ *           description: Physical condition of the vehicle
+ *           example: good
+ *         accidentHistory:
+ *           type: boolean
+ *           default: false
+ *           description: Whether the vehicle has been in any accidents
+ *           example: false
+ *         usageLevel:
+ *           type: string
+ *           description: Computed usage level based on mileage and age (virtual field)
+ *           example: Moderate Usage
  *         features:
  *           type: array
  *           items:
  *             type: string
- *           description: List of features
- *           example: ["Air Conditioning", "Bluetooth", "Backup Camera"]
+ *           description: List of feature IDs (ObjectId references)
+ *           example: ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
  *         photos:
  *           type: array
  *           items:
@@ -135,6 +155,8 @@ import mongooseSanitize from 'mongoose-sanitize';
 import {
   ICarDocument,
   BodyType,
+  CarGenericColor,
+  CarCondition,
   TransmissionType,
   FuelType,
   CarVerificationStatus,
@@ -151,8 +173,16 @@ const photoSchema = new Schema(
 
 const locationSchema = new Schema(
   {
-    address: { type: String, required: true, trim: true },
-    city: { type: String, required: true, trim: true },
+    city: {
+      type: Schema.Types.ObjectId,
+      ref: 'City',
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
   },
   { _id: false },
 );
@@ -209,7 +239,33 @@ const carSchema = new Schema<ICarDocument>(
         'other',
       ] as BodyType[]),
     },
-    color: { type: String, trim: true },
+    color: {
+      type: String,
+      trim: true,
+    },
+    genericColor: {
+      type: String,
+      required: [true, 'Generic color is required for filtering.'],
+      enum: Object.values([
+        'Black',
+        'White',
+        'Silver',
+        'Grey',
+        'Blue',
+        'Red',
+        'Brown',
+        'Green',
+        'Beige',
+        'Orange',
+        'Gold',
+        'Yellow',
+        'Purple',
+        'Bronze',
+        'Burgundy',
+        'Other',
+      ] as CarGenericColor[]),
+      index: true,
+    },
     transmission: {
       type: String,
       enum: Object.values(['automatic', 'manual'] as TransmissionType[]),
@@ -228,7 +284,23 @@ const carSchema = new Schema<ICarDocument>(
       min: [1, 'Must have at least 1 seat.'],
     },
     mileage: { type: Number, min: [0, 'Mileage cannot be negative.'] },
-    features: { type: [String], trim: true },
+    condition: {
+      type: String,
+      enum: Object.values(CarCondition),
+      default: CarCondition.GOOD,
+      index: true,
+    },
+    accidentHistory: {
+      type: Boolean,
+      default: false,
+    },
+    features: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'Feature' }],
+      validate: {
+        validator: (v: any[]) => !v || v.length <= 20,
+        message: 'Cannot have more than 20 features.',
+      },
+    },
     photos: {
       type: [photoSchema],
       validate: {
@@ -254,23 +326,12 @@ const carSchema = new Schema<ICarDocument>(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
 
-carSchema.pre('save', function (next) {
-  if (this.isModified('features') && this.features) {
-    this.features = this.features.map((f) => f.trim());
-  }
-  next();
-});
-
 carSchema.plugin(mongooseSanitize);
-
-carSchema.index({
-  make: 'text',
-  vehicleModel: 'text',
-  'homeLocation.city': 'text',
-});
 
 carSchema.virtual('rentalListing', {
   ref: 'RentalListing',
@@ -284,6 +345,22 @@ carSchema.virtual('saleListing', {
   localField: '_id',
   foreignField: 'car',
   justOne: true,
+});
+
+carSchema.virtual('usageLevel').get(function () {
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - this.year;
+  const mileage = this.mileage || 0;
+
+  if (mileage < 100 && age < 1) {
+    return 'New';
+  } else if (mileage < 20000 && age < 3) {
+    return 'Low Usage';
+  } else if (mileage < 100000) {
+    return 'Moderate Usage';
+  } else {
+    return 'Heavily Used';
+  }
 });
 
 const Car = mongoose.model<ICarDocument>('Car', carSchema);

@@ -169,7 +169,6 @@ router.use(protect);
  *             required:
  *               - car
  *               - salePrice
- *               - condition
  *               - listingDescription
  *             properties:
  *               car:
@@ -181,11 +180,6 @@ router.use(protect);
  *                 minimum: 0
  *                 description: Sale price of the vehicle (REQUIRED, cannot be negative)
  *                 example: 450000
- *               condition:
- *                 type: string
- *                 enum: [new, used_like_new, used_good, used_fair]
- *                 description: Condition of the vehicle (REQUIRED)
- *                 example: used_good
  *               listingDescription:
  *                 type: string
  *                 minLength: 1
@@ -293,11 +287,6 @@ router.get('/manage/my-listings', saleController.getMySaleListingsHandler);
  *                 minimum: 0
  *                 description: Sale price (optional)
  *                 example: 480000
- *               condition:
- *                 type: string
- *                 enum: [new, used_like_new, used_good, used_fair]
- *                 description: Vehicle condition (optional)
- *                 example: used_like_new
  *               listingDescription:
  *                 type: string
  *                 maxLength: 2000

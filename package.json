@@ -12,6 +12,10 @@
     "seed": "tsx src/_seeder/cars.seeder.ts",
     "seed:destroy": "tsx src/_seeder/cars.seeder.ts -d",
     "seed:admin": "tsx src/_seeder/admin.seeder.ts",
+    "seed:cities": "tsx src/_seeder/cities.seeder.ts",
+    "seed:cities:destroy": "tsx src/_seeder/cities.seeder.ts -d",
+    "seed:features": "tsx src/_seeder/features.seeder.ts",
+    "seed:features:destroy": "tsx src/_seeder/features.seeder.ts -d",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "keywords": [

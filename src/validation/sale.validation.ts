@@ -14,10 +14,6 @@ export const createSaleListingSchema = z.object({
     .coerce
     .number()
     .min(0, 'Sale price cannot be negative'),
-  condition: z.enum(
-        ['new', 'used_like_new', 'used_good', 'used_fair'],
-        { message: 'Invalid vehicle condition.' }
-    ),
   listingDescription: z
     .string()
     .min(1, 'Description is required')
@@ -27,9 +23,6 @@ export const createSaleListingSchema = z.object({
 
 export const updateSaleListingSchema = z.object({
   salePrice: z.coerce.number().min(0).optional(),
-  condition: z
-    .enum(['new', 'used_like_new', 'used_good', 'used_fair'])
-    .optional(),
   listingDescription: z.string().max(2000).optional(),
   status: z.enum(['available', 'pending', 'sold']).optional(),
 });

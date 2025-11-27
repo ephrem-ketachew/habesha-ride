@@ -4,18 +4,11 @@ import { ICarDocument } from './car.types.js';
 
 export type SaleStatus = 'available' | 'pending' | 'sold';
 
-export type VehicleCondition =
-  | 'new'
-  | 'used_like_new'
-  | 'used_good'
-  | 'used_fair';
-
 export interface ISaleListing {
   car: PopulatedDoc<ICarDocument>;
   owner: PopulatedDoc<IUserDocument>;
   status: SaleStatus;
   salePrice: number;
-  condition: VehicleCondition;
   listingDescription: string;
   isFeatured: boolean;
 

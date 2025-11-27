@@ -11,6 +11,28 @@ const bodyTypeEnum = z.enum([
   'van',
   'other',
 ]);
+
+const genericColorEnum = z.enum([
+  'Black',
+  'White',
+  'Silver',
+  'Grey',
+  'Blue',
+  'Red',
+  'Brown',
+  'Green',
+  'Beige',
+  'Orange',
+  'Gold',
+  'Yellow',
+  'Purple',
+  'Bronze',
+  'Burgundy',
+  'Other',
+]);
+
+const conditionEnum = z.enum(['new', 'excellent', 'good', 'fair', 'poor']);
+
 const transmissionEnum = z.enum(['automatic', 'manual']);
 const fuelTypeEnum = z.enum(['gasoline', 'diesel', 'electric', 'hybrid']);
 
@@ -24,11 +46,21 @@ export const createCarSchema = z
       .max(new Date().getFullYear() + 1, "Year can't be in the future"),
     licensePlate: z.string().min(1, 'License plate is required'),
     address: z.string().min(1, 'Address is required').transform(sanitizeInput),
-    city: z.string().min(1, 'City is required').transform(sanitizeInput),
+    city: z
+      .string()
+      .min(1, 'City is required')
+      .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+        message: 'City must be a valid ObjectId',
+      }),
 
     vin: z.string().optional(),
     bodyType: bodyTypeEnum.optional(),
-    color: z.string().transform(sanitizeInput).optional(),
+    color: z
+      .string()
+      .max(50, 'Color name cannot exceed 50 characters')
+      .transform(sanitizeInput)
+      .optional(),
+    genericColor: genericColorEnum,
     transmission: transmissionEnum.optional(),
     fuelType: fuelTypeEnum.optional(),
     seatingCapacity: z.coerce
@@ -37,14 +69,25 @@ export const createCarSchema = z
       .optional(),
     mileage: z.coerce.number().min(0, 'Mileage cannot be negative').optional(),
     features: z
-      .union([z.string(), z.array(z.string())])
+      .union([
+        z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+          message: 'Feature ID must be a valid ObjectId',
+        }),
+        z
+          .array(
+            z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+              message: 'Feature ID must be a valid ObjectId',
+            }),
+          )
+          .max(20, 'Cannot have more than 20 features'),
+      ])
       .optional()
       .transform((val) => {
         if (val === undefined) return [];
         if (typeof val === 'string') {
-          return [sanitizeInput(val)];
+          return [val];
         }
-        return val.map(sanitizeInput);
+        return val;
       }),
   })
   .transform((data) => {
@@ -92,11 +135,18 @@ export const updateCarSchema = z
     city: z
       .string()
       .min(1, 'City is required')
-      .transform(sanitizeInput)
+      .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+        message: 'City must be a valid ObjectId',
+      })
       .optional(),
     vin: z.string().optional(),
     bodyType: bodyTypeEnum.optional(),
-    color: z.string().transform(sanitizeInput).optional(),
+    color: z
+      .string()
+      .max(50, 'Color name cannot exceed 50 characters')
+      .transform(sanitizeInput)
+      .optional(),
+    genericColor: genericColorEnum.optional(),
     transmission: transmissionEnum.optional(),
     fuelType: fuelTypeEnum.optional(),
     seatingCapacity: z.coerce
@@ -104,15 +154,28 @@ export const updateCarSchema = z
       .min(1, 'Must have at least 1 seat')
       .optional(),
     mileage: z.coerce.number().min(0, 'Mileage cannot be negative').optional(),
+    condition: conditionEnum.optional(),
+    accidentHistory: z.boolean().optional(),
     features: z
-      .union([z.string(), z.array(z.string())])
+      .union([
+        z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+          message: 'Feature ID must be a valid ObjectId',
+        }),
+        z
+          .array(
+            z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+              message: 'Feature ID must be a valid ObjectId',
+            }),
+          )
+          .max(20, 'Cannot have more than 20 features'),
+      ])
       .optional()
       .transform((val) => {
         if (val === undefined) return undefined;
         if (typeof val === 'string') {
-          return [sanitizeInput(val)];
+          return [val];
         }
-        return val.map(sanitizeInput);
+        return val;
       }),
 
     photosToDelete: z

@@ -64,6 +64,14 @@ const swaggerDefinition = {
       description: 'Car model management',
     },
     {
+      name: 'Cities',
+      description: 'City management endpoints',
+    },
+    {
+      name: 'Features',
+      description: 'Car feature management endpoints',
+    },
+    {
       name: 'Admin',
       description: 'Admin endpoints for platform management',
     },
@@ -78,4 +86,3 @@ const options: swaggerJsdoc.Options = {
 const swaggerSpec = swaggerJsdoc(options);
 
 export default swaggerSpec;
-
