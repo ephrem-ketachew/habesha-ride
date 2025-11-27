@@ -68,6 +68,75 @@ const router = Router();
  *           type: string
  *         description: Filter by city location
  *         example: Addis Ababa
+ *       - in: query
+ *         name: bodyType
+ *         schema:
+ *           type: string
+ *           enum: [sedan, suv, truck, hatchback, coupe, van, other]
+ *         description: Filter by car body type
+ *         example: suv
+ *       - in: query
+ *         name: transmission
+ *         schema:
+ *           type: string
+ *           enum: [automatic, manual]
+ *         description: Filter by transmission type
+ *         example: automatic
+ *       - in: query
+ *         name: fuelType
+ *         schema:
+ *           type: string
+ *           enum: [gasoline, diesel, electric, hybrid]
+ *         description: Filter by fuel type
+ *         example: gasoline
+ *       - in: query
+ *         name: genericColor
+ *         schema:
+ *           type: string
+ *           enum: [Black, White, Silver, Grey, Blue, Red, Brown, Green, Beige, Orange, Gold, Yellow, Purple, Bronze, Burgundy, Other]
+ *         description: Filter by generic color category
+ *         example: Blue
+ *       - in: query
+ *         name: condition
+ *         schema:
+ *           type: string
+ *           enum: [new, excellent, good, fair, poor]
+ *         description: Filter by car condition
+ *         example: good
+ *       - in: query
+ *         name: minSeats
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Minimum seating capacity
+ *         example: 5
+ *       - in: query
+ *         name: minYear
+ *         schema:
+ *           type: integer
+ *           minimum: 1900
+ *         description: Minimum manufacturing year
+ *         example: 2020
+ *       - in: query
+ *         name: maxYear
+ *         schema:
+ *           type: integer
+ *         description: Maximum manufacturing year
+ *         example: 2024
+ *       - in: query
+ *         name: deliveryAvailable
+ *         schema:
+ *           type: boolean
+ *         description: Filter by delivery availability
+ *         example: true
+ *       - in: query
+ *         name: features
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: Filter by feature IDs (array of ObjectIds). Car must have ALL specified features.
+ *         example: ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
  *     responses:
  *       200:
  *         description: Successfully retrieved rental listings with pagination metadata

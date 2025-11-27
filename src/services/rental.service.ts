@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import RentalListing from '../models/rentalListing.model.js';
 import Car from '../models/car.model.js';
 import AppError from '../utils/appError.util.js';
@@ -57,7 +58,24 @@ export const getMyRentalListings = async (userId: string) => {
 export const getPublicRentalListings = async (
   query: GetRentalListingsQuery,
 ) => {
-  const { minPrice, maxPrice, page, limit, city } = query;
+  const {
+    minPrice,
+    maxPrice,
+    page,
+    limit,
+    city,
+    make,
+    bodyType,
+    transmission,
+    fuelType,
+    genericColor,
+    condition,
+    minSeats,
+    minYear,
+    maxYear,
+    deliveryAvailable,
+    features,
+  } = query;
 
   const pageNum = page ? Number(page) : 1;
   const limitNum = limit ? Number(limit) : 20;
@@ -67,6 +85,10 @@ export const getPublicRentalListings = async (
   const matchStage: any = {
     status: 'listed',
   };
+
+  if (deliveryAvailable !== undefined) {
+    matchStage.deliveryAvailable = deliveryAvailable;
+  }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
     matchStage.ratePerDay = {};
@@ -86,13 +108,69 @@ export const getPublicRentalListings = async (
       },
     },
     { $unwind: '$carData' },
-
-    {
-      $match: {
-        'carData.verificationStatus': 'approved',
-      },
-    },
   ];
+
+  const carMatchStage: any = {
+    'carData.verificationStatus': 'approved',
+  };
+
+  if (make) {
+    carMatchStage['carData.make'] = new mongoose.Types.ObjectId(make);
+  }
+
+  if (bodyType) {
+    carMatchStage['carData.bodyType'] = bodyType;
+  }
+
+  if (transmission) {
+    carMatchStage['carData.transmission'] = transmission;
+  }
+
+  if (fuelType) {
+    carMatchStage['carData.fuelType'] = fuelType;
+  }
+
+  if (genericColor) {
+    carMatchStage['carData.genericColor'] = genericColor;
+  }
+
+  if (condition) {
+    carMatchStage['carData.condition'] = condition;
+  }
+
+  if (minSeats !== undefined) {
+    const minSeatsNum = Number(minSeats);
+    if (!isNaN(minSeatsNum)) {
+      carMatchStage['carData.seatingCapacity'] = {
+        $gte: minSeatsNum,
+      };
+    }
+  }
+
+  if (minYear !== undefined || maxYear !== undefined) {
+    carMatchStage['carData.year'] = {};
+    if (minYear !== undefined) {
+      const minYearNum = Number(minYear);
+      if (!isNaN(minYearNum)) {
+        carMatchStage['carData.year'].$gte = minYearNum;
+      }
+    }
+    if (maxYear !== undefined) {
+      const maxYearNum = Number(maxYear);
+      if (!isNaN(maxYearNum)) {
+        carMatchStage['carData.year'].$lte = maxYearNum;
+      }
+    }
+  }
+
+  if (features && features.length > 0) {
+    const featureIds = (Array.isArray(features) ? features : [features]).map(
+      (id) => new mongoose.Types.ObjectId(id),
+    );
+    carMatchStage['carData.features'] = { $all: featureIds };
+  }
+
+  pipeline.push({ $match: carMatchStage });
 
   if (city) {
     pipeline.push(
@@ -170,6 +248,11 @@ export const getPublicRentalListings = async (
               fuelType: '$carData.fuelType',
               seats: '$carData.seatingCapacity',
               photos: '$carData.photos',
+              condition: '$carData.condition',
+              genericColor: '$carData.genericColor',
+              color: '$carData.color',
+              accidentHistory: '$carData.accidentHistory',
+              mileage: '$carData.mileage',
               location: '$carData.homeLocation',
             },
             owner: {
