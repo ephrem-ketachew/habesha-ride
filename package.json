@@ -16,6 +16,8 @@
     "seed:cities:destroy": "tsx src/_seeder/cities.seeder.ts -d",
     "seed:features": "tsx src/_seeder/features.seeder.ts",
     "seed:features:destroy": "tsx src/_seeder/features.seeder.ts -d",
+    "seed:mock": "tsx src/_seeder/mock.seeder.ts",
+    "seed:mock:destroy": "tsx src/_seeder/mock.seeder.ts -d",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "keywords": [
@@ -55,6 +57,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",

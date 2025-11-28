@@ -172,23 +172,24 @@ export const getPublicRentalListings = async (
 
   pipeline.push({ $match: carMatchStage });
 
+  pipeline.push(
+    {
+      $lookup: {
+        from: 'cities',
+        localField: 'carData.homeLocation.city',
+        foreignField: '_id',
+        as: 'cityData',
+      },
+    },
+    { $unwind: '$cityData' },
+  );
+
   if (city) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: 'cities',
-          localField: 'carData.homeLocation.city',
-          foreignField: '_id',
-          as: 'cityData',
-        },
+    pipeline.push({
+      $match: {
+        'cityData.name': { $regex: city, $options: 'i' },
       },
-      { $unwind: '$cityData' },
-      {
-        $match: {
-          'cityData.name': { $regex: city, $options: 'i' },
-        },
-      },
-    );
+    });
   }
 
   pipeline.push(
@@ -253,7 +254,10 @@ export const getPublicRentalListings = async (
               color: '$carData.color',
               accidentHistory: '$carData.accidentHistory',
               mileage: '$carData.mileage',
-              location: '$carData.homeLocation',
+              location: {
+                address: '$carData.homeLocation.address',
+                city: '$cityData',
+              },
             },
             owner: {
               firstName: '$ownerData.firstName',

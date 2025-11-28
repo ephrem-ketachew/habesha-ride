@@ -75,6 +75,16 @@ export const getUnifiedListings = async (query: any) => {
     { $unwind: '$carData.vehicleModel' },
 
     {
+      $lookup: {
+        from: 'cities',
+        localField: 'carData.homeLocation.city',
+        foreignField: '_id',
+        as: 'cityData',
+      },
+    },
+    { $unwind: '$cityData' },
+
+    {
       $facet: {
         metadata: [{ $count: 'total' }],
         data: [
@@ -89,7 +99,26 @@ export const getUnifiedListings = async (query: any) => {
               period: 1,
               isFeatured: 1,
               createdAt: 1,
-              car: '$carData',
+              car: {
+                _id: '$carData._id',
+                make: '$carData.make',
+                vehicleModel: '$carData.vehicleModel',
+                year: '$carData.year',
+                type: '$carData.bodyType',
+                transmission: '$carData.transmission',
+                fuelType: '$carData.fuelType',
+                seats: '$carData.seatingCapacity',
+                photos: '$carData.photos',
+                condition: '$carData.condition',
+                genericColor: '$carData.genericColor',
+                color: '$carData.color',
+                accidentHistory: '$carData.accidentHistory',
+                mileage: '$carData.mileage',
+                location: {
+                  address: '$carData.homeLocation.address',
+                  city: '$cityData',
+                },
+              },
               owner: {
                 firstName: '$ownerData.firstName',
                 lastName: '$ownerData.lastName',

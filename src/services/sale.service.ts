@@ -93,23 +93,24 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
     },
   ];
 
+  pipeline.push(
+    {
+      $lookup: {
+        from: 'cities',
+        localField: 'carData.homeLocation.city',
+        foreignField: '_id',
+        as: 'cityData',
+      },
+    },
+    { $unwind: '$cityData' },
+  );
+
   if (city) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: 'cities',
-          localField: 'carData.homeLocation.city',
-          foreignField: '_id',
-          as: 'cityData',
-        },
+    pipeline.push({
+      $match: {
+        'cityData.name': { $regex: city, $options: 'i' },
       },
-      { $unwind: '$cityData' },
-      {
-        $match: {
-          'cityData.name': { $regex: city, $options: 'i' },
-        },
-      },
-    );
+    });
   }
 
   pipeline.push(
@@ -173,7 +174,10 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
               mileage: '$carData.mileage',
               condition: '$carData.condition',
               accidentHistory: '$carData.accidentHistory',
-              location: '$carData.homeLocation',
+              location: {
+                address: '$carData.homeLocation.address',
+                city: '$cityData',
+              },
             },
             owner: {
               firstName: '$ownerData.firstName',
