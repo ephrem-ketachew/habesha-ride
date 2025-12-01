@@ -87,6 +87,21 @@ const getRandomItems = <T>(arr: T[], count: number): T[] => {
   return shuffled.slice(0, count);
 };
 
+const generateUnavailableRanges = (count: number) => {
+  const ranges = [];
+  for (let i = 0; i < count; i++) {
+    const startDate = faker.date.future();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + faker.number.int({ min: 1, max: 7 }));
+    ranges.push({
+      startDate,
+      endDate,
+      reason: getRandomItem(['booking', 'manual_block']),
+    });
+  }
+  return ranges;
+};
+
 const cleanData = async () => {
   logger.warn('🧹 Cleaning up mock data (Users, Cars, Listings)...');
   await RentalListing.deleteMany({});
@@ -196,15 +211,47 @@ const seed = async () => {
         const isRent = Math.random() < CONFIG.RENTAL_SPLIT;
 
         if (isRent) {
+          const deliveryAvailable = faker.datatype.boolean();
+          const isMileageLimited = faker.datatype.boolean();
+          const weeklyDiscount = faker.number.int({ min: 0, max: 15 });
+          const monthlyDiscount = faker.number.int({
+            min: weeklyDiscount,
+            max: 30,
+          });
+          const numUnavailableRanges = faker.number.int({ min: 0, max: 2 });
+
           rentalListings.push({
             car: car._id,
             owner: user._id,
             status: 'listed',
             ratePerDay: faker.number.int({ min: 1000, max: 15000 }),
-            deliveryAvailable: faker.datatype.boolean(),
-            deliveryFee: faker.number.int({ min: 0, max: 500 }),
+            ratePerHour: faker.datatype.boolean()
+              ? faker.number.int({ min: 100, max: 500 })
+              : undefined,
+            securityDeposit: faker.number.int({ min: 5000, max: 20000 }),
+            weeklyDiscountPercent: weeklyDiscount,
+            monthlyDiscountPercent: monthlyDiscount,
+            allowedMileagePerDay: isMileageLimited
+              ? faker.number.int({ min: 100, max: 500 })
+              : null,
+            excessMileageFee: isMileageLimited
+              ? faker.number.int({ min: 20, max: 100 })
+              : 0,
+            advanceNoticeHours: faker.number.int({ min: 6, max: 48 }),
+            deliveryAvailable,
+            deliveryFee: deliveryAvailable
+              ? faker.number.int({ min: 100, max: 500 })
+              : undefined,
             minRentalDurationDays: faker.number.int({ min: 1, max: 3 }),
+            maxRentalDurationDays: faker.number.int({ min: 30, max: 90 }),
+            instantBookingAvailable: faker.datatype.boolean(),
+            cancellationPolicy: getRandomItem([
+              'flexible',
+              'moderate',
+              'strict',
+            ]),
             listingDescription: faker.lorem.paragraph(),
+            unavailableRanges: generateUnavailableRanges(numUnavailableRanges),
             isFeatured: Math.random() < 0.1,
           });
         } else {
