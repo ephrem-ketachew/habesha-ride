@@ -1,3 +1,197 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Booking:
+ *       type: object
+ *       required:
+ *         - car
+ *         - listing
+ *         - renter
+ *         - owner
+ *         - startDate
+ *         - endDate
+ *         - totalPrice
+ *         - priceBreakdown
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Booking ID
+ *           example: 507f1f77bcf86cd799439011
+ *         car:
+ *           type: string
+ *           description: Car ID (reference to Car document)
+ *           example: 507f1f77bcf86cd799439012
+ *         listing:
+ *           type: string
+ *           description: Rental listing ID (reference to RentalListing document)
+ *           example: 507f1f77bcf86cd799439013
+ *         renter:
+ *           type: string
+ *           description: Renter user ID (reference to User document)
+ *           example: 507f1f77bcf86cd799439014
+ *         owner:
+ *           type: string
+ *           description: Owner user ID (reference to User document)
+ *           example: 507f1f77bcf86cd799439015
+ *         startDate:
+ *           type: string
+ *           format: date-time
+ *           description: Booking start date and time
+ *           example: "2024-02-01T10:00:00Z"
+ *         endDate:
+ *           type: string
+ *           format: date-time
+ *           description: Booking end date and time (must be after startDate)
+ *           example: "2024-02-05T18:00:00Z"
+ *         totalPrice:
+ *           type: number
+ *           minimum: 0
+ *           description: Total price for the booking (rounded to 2 decimal places)
+ *           example: 12500.50
+ *         securityDeposit:
+ *           type: number
+ *           minimum: 0
+ *           default: 0
+ *           description: Security deposit amount to be held during the trip
+ *           example: 5000
+ *         priceBreakdown:
+ *           type: object
+ *           required:
+ *             - basePrice
+ *             - days
+ *           properties:
+ *             basePrice:
+ *               type: number
+ *               description: Base price calculated as ratePerDay × days (rounded to 2 decimal places)
+ *               example: 10000.00
+ *             days:
+ *               type: integer
+ *               minimum: 1
+ *               description: Number of rental days
+ *               example: 4
+ *             deliveryFee:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Delivery fee if delivery was requested
+ *               example: 300.00
+ *             discountAmount:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Discount amount applied (weekly or monthly discount, rounded to 2 decimal places)
+ *               example: 1000.00
+ *             serviceFee:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Service fee (5% of basePrice - discountAmount, rounded to 2 decimal places)
+ *               example: 450.00
+ *           description: Detailed breakdown of the booking price
+ *         usageLimits:
+ *           type: object
+ *           properties:
+ *             allowedMileagePerDay:
+ *               type: number
+ *               nullable: true
+ *               minimum: 0
+ *               description: Maximum kilometers allowed per day. null means unlimited mileage
+ *               example: 200
+ *             excessMileageFee:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Fee per kilometer charged if the renter exceeds the allowed mileage per day
+ *               example: 5
+ *           description: Mileage usage limits and fees
+ *         odometerReadings:
+ *           type: object
+ *           properties:
+ *             start:
+ *               type: number
+ *               nullable: true
+ *               minimum: 0
+ *               description: Odometer reading at the start of the trip (in kilometers). null if not yet recorded
+ *               example: 45000
+ *             end:
+ *               type: number
+ *               nullable: true
+ *               minimum: 0
+ *               description: Odometer reading at the end of the trip (in kilometers). null if not yet recorded
+ *               example: 45200
+ *           description: Odometer readings to track mileage usage
+ *         status:
+ *           type: string
+ *           enum: [pending, confirmed, active, completed, cancelled, rejected]
+ *           default: pending
+ *           description: |
+ *             Booking status:
+ *             - pending: Awaiting owner confirmation
+ *             - confirmed: Owner has confirmed the booking
+ *             - active: Trip is currently in progress
+ *             - completed: Trip has been completed
+ *             - cancelled: Booking was cancelled (by renter or owner)
+ *             - rejected: Owner rejected the booking request
+ *           example: confirmed
+ *         paymentStatus:
+ *           type: string
+ *           enum: [pending, paid, refunded, failed]
+ *           default: pending
+ *           description: |
+ *             Payment status:
+ *             - pending: Payment not yet processed
+ *             - paid: Payment successfully completed
+ *             - refunded: Payment was refunded (e.g., after cancellation)
+ *             - failed: Payment processing failed
+ *           example: paid
+ *         paymentTransactionId:
+ *           type: string
+ *           description: Transaction ID from the payment processor (if payment has been processed)
+ *           example: "txn_1234567890abcdef"
+ *         cancellationReason:
+ *           type: string
+ *           description: Reason for cancellation (if booking was cancelled)
+ *           example: "Change of plans"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Booking creation timestamp
+ *           example: "2024-01-15T08:30:00Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Last update timestamp
+ *           example: "2024-01-15T10:45:00Z"
+ *       example:
+ *         _id: "507f1f77bcf86cd799439011"
+ *         car: "507f1f77bcf86cd799439012"
+ *         listing: "507f1f77bcf86cd799439013"
+ *         renter: "507f1f77bcf86cd799439014"
+ *         owner: "507f1f77bcf86cd799439015"
+ *         startDate: "2024-02-01T10:00:00Z"
+ *         endDate: "2024-02-05T18:00:00Z"
+ *         totalPrice: 12500.50
+ *         securityDeposit: 5000
+ *         priceBreakdown:
+ *           basePrice: 10000.00
+ *           days: 4
+ *           deliveryFee: 300.00
+ *           discountAmount: 1000.00
+ *           serviceFee: 450.00
+ *         usageLimits:
+ *           allowedMileagePerDay: 200
+ *           excessMileageFee: 5
+ *         odometerReadings:
+ *           start: 45000
+ *           end: null
+ *         status: "confirmed"
+ *         paymentStatus: "paid"
+ *         paymentTransactionId: "txn_1234567890abcdef"
+ *         cancellationReason: null
+ *         createdAt: "2024-01-15T08:30:00Z"
+ *         updatedAt: "2024-01-15T10:45:00Z"
+ */
 import mongoose, { Schema } from 'mongoose';
 import {
   IBookingDocument,

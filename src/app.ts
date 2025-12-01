@@ -23,6 +23,7 @@ import adminRoutes from './routes/admin.routes.js';
 import rentalRoutes from './routes/rental.routes.js';
 import saleRoutes from './routes/sale.routes.js';
 import listingRoutes from './routes/listing.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
 
 const app: Express = express();
 
@@ -75,6 +76,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/listings/rent', rentalRoutes);
 app.use('/api/v1/listings/sale', saleRoutes);
 app.use('/api/v1/listings', listingRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({

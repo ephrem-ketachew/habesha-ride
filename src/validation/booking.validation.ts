@@ -25,6 +25,7 @@ export const createBookingSchema = z
       message: 'Start date must be in the future',
     }),
     endDate: z.coerce.date(),
+    deliveryRequested: z.boolean().optional(),
   })
   .refine((data) => data.endDate > data.startDate, {
     message: 'End date must be after start date',
@@ -36,7 +37,7 @@ export const getBookingIdSchema = z.object({
 });
 
 export const updateBookingStatusBodySchema = z.object({
-  status: bookingStatusEnum,
+  status: z.enum(['confirmed', 'rejected', 'cancelled']),
   cancellationReason: z.string().optional(),
 });
 
