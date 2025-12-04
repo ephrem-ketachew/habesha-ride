@@ -19,6 +19,9 @@ export interface IPriceBreakdown {
   deliveryFee: number;
   discountAmount: number;
   serviceFee: number;
+  excessMileageFee: number;
+  cancellationFee?: number;
+  refundAmount?: number;
 }
 
 export interface IUsageLimits {
@@ -30,6 +33,8 @@ export interface IOdometerReadings {
   start: number | null;
   end: number | null;
 }
+
+export type CancellationPolicy = 'flexible' | 'moderate' | 'strict';
 
 export interface IBooking {
   car: PopulatedDoc<ICarDocument>;
@@ -47,6 +52,11 @@ export interface IBooking {
   paymentStatus: PaymentStatus;
   paymentTransactionId?: string;
   cancellationReason?: string;
+  cancellationPolicy: CancellationPolicy;
+  refundAmount?: number;
+  cancellationFee?: number;
+  cancelledBy?: 'renter' | 'owner';
+  cancelledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

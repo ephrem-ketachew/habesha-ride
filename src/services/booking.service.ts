@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
 import Booking from '../models/booking.model.js';
 import RentalListing from '../models/rentalListing.model.js';
+import Car from '../models/car.model.js';
 import { CreateBookingInput } from '../validation/booking.validation.js';
 import AppError from '../utils/appError.util.js';
 import { IUserDocument } from '../types/user.types.js';
+import { IPriceBreakdown, IBookingDocument } from '../types/booking.types.js';
 
 const SERVICE_FEE_PERCENT = 0.05;
+const MAX_ODOMETER_TOLERANCE_KM = 100;
+const MAX_REASONABLE_DAILY_MILEAGE_KM = 1000;
 
 const calculateDays = (start: Date, end: Date): number => {
   const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -115,7 +119,6 @@ export const createBooking = async (
     throw new AppError('Car is not available for the selected dates.', 409);
   }
 
-  // Calculate base price and round to 2 decimal places to avoid floating point issues
   const basePrice = Math.round(listing.ratePerDay * days * 100) / 100;
 
   let discountAmount = 0;
@@ -136,11 +139,9 @@ export const createBooking = async (
     deliveryFee = listing.deliveryFee || 0;
   }
 
-  // Calculate service fee on the discounted amount and round
   const serviceFee =
     Math.round((basePrice - discountAmount) * SERVICE_FEE_PERCENT * 100) / 100;
 
-  // Calculate total price and round to 2 decimal places
   const totalPrice =
     Math.round((basePrice - discountAmount + deliveryFee + serviceFee) * 100) /
     100;
@@ -160,11 +161,13 @@ export const createBooking = async (
       deliveryFee,
       discountAmount,
       serviceFee,
+      excessMileageFee: 0,
     },
     usageLimits: {
       allowedMileagePerDay: listing.allowedMileagePerDay,
       excessMileageFee: listing.excessMileageFee,
     },
+    cancellationPolicy: listing.cancellationPolicy,
     status: listing.instantBookingAvailable ? 'confirmed' : 'pending',
     paymentStatus: 'pending',
   });
@@ -265,23 +268,7 @@ export const updateBookingStatus = async (
   }
 
   if (status === 'cancelled') {
-    if (renterId !== userId && ownerId !== userId) {
-      throw new AppError('Not authorized to cancel this booking.', 403);
-    }
-
-    if (booking.status === 'active' || booking.status === 'completed') {
-      throw new AppError(
-        'Cannot cancel a trip that is active or completed.',
-        400,
-      );
-    }
-
-    if (booking.status === 'cancelled' || booking.status === 'rejected') {
-      throw new AppError(
-        `Cannot cancel a booking that is already ${booking.status}.`,
-        400,
-      );
-    }
+    return await cancelBooking(bookingId, userId, reason);
   }
 
   if (booking.status === status) {
@@ -292,5 +279,367 @@ export const updateBookingStatus = async (
   if (reason) booking.cancellationReason = reason;
 
   await booking.save();
+  return booking;
+};
+
+export const startBooking = async (
+  bookingId: string,
+  userId: string,
+  odometerReading: number,
+) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) throw new AppError('Booking not found', 404);
+
+  const getUserId = (
+    user: mongoose.Types.ObjectId | IUserDocument | undefined,
+  ): string => {
+    if (!user) {
+      throw new AppError('User information is missing.', 500);
+    }
+    if (user instanceof mongoose.Types.ObjectId) {
+      return user.toString();
+    }
+    const userDoc = user as unknown as IUserDocument;
+    return (userDoc._id as mongoose.Types.ObjectId).toString();
+  };
+
+  const renterId = getUserId(booking.renter);
+
+  if (renterId !== userId) {
+    throw new AppError('Only the renter can start the booking.', 403);
+  }
+
+  if (booking.status !== 'confirmed') {
+    throw new AppError(
+      `Cannot start a booking that is ${booking.status}. Booking must be confirmed.`,
+      400,
+    );
+  }
+
+  const now = new Date();
+  const oneHourBeforeStart = new Date(
+    booking.startDate.getTime() - 60 * 60 * 1000,
+  );
+  if (now < oneHourBeforeStart) {
+    throw new AppError(
+      'Cannot start booking more than 1 hour before the scheduled start date.',
+      400,
+    );
+  }
+
+  if (booking.odometerReadings.start !== null) {
+    throw new AppError(
+      'Odometer start reading has already been recorded.',
+      400,
+    );
+  }
+
+  const getCarId = (): mongoose.Types.ObjectId => {
+    if (!booking.car) {
+      throw new AppError('Car information is missing.', 500);
+    }
+    if (booking.car instanceof mongoose.Types.ObjectId) {
+      return booking.car;
+    }
+    const carDoc = booking.car as any;
+    return (carDoc._id as mongoose.Types.ObjectId) || booking.car;
+  };
+
+  const carId = getCarId();
+  const car = await Car.findById(carId);
+  if (!car) {
+    throw new AppError('Car not found.', 404);
+  }
+
+  if (car.mileage !== null && car.mileage !== undefined) {
+    if (odometerReading < car.mileage) {
+      throw new AppError(
+        `Start odometer reading (${odometerReading}km) cannot be less than car's current mileage (${car.mileage}km). Odometer readings cannot decrease.`,
+        400,
+      );
+    }
+
+    const mileageIncrease = odometerReading - car.mileage;
+    if (mileageIncrease > MAX_ODOMETER_TOLERANCE_KM) {
+      throw new AppError(
+        `Start odometer reading (${odometerReading}km) exceeds car's current mileage (${car.mileage}km) by more than ${MAX_ODOMETER_TOLERANCE_KM}km. Please verify the reading or update the car's mileage.`,
+        400,
+      );
+    }
+  }
+
+  booking.status = 'active';
+  booking.odometerReadings.start = odometerReading;
+
+  await booking.save();
+  return booking;
+};
+
+export const completeBooking = async (
+  bookingId: string,
+  userId: string,
+  odometerReading: number,
+) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) throw new AppError('Booking not found', 404);
+
+  const getUserId = (
+    user: mongoose.Types.ObjectId | IUserDocument | undefined,
+  ): string => {
+    if (!user) {
+      throw new AppError('User information is missing.', 500);
+    }
+    if (user instanceof mongoose.Types.ObjectId) {
+      return user.toString();
+    }
+    const userDoc = user as unknown as IUserDocument;
+    return (userDoc._id as mongoose.Types.ObjectId).toString();
+  };
+
+  const renterId = getUserId(booking.renter);
+  const ownerId = getUserId(booking.owner);
+
+  if (renterId !== userId && ownerId !== userId) {
+    throw new AppError(
+      'Only the renter or owner can complete the booking.',
+      403,
+    );
+  }
+
+  if (booking.status !== 'active') {
+    throw new AppError(
+      `Cannot complete a booking that is ${booking.status}. Booking must be active.`,
+      400,
+    );
+  }
+
+  if (booking.odometerReadings.start === null) {
+    throw new AppError(
+      'Cannot complete booking without start odometer reading.',
+      400,
+    );
+  }
+
+  if (booking.odometerReadings.end !== null) {
+    throw new AppError('Odometer end reading has already been recorded.', 400);
+  }
+
+  if (odometerReading < booking.odometerReadings.start) {
+    throw new AppError(
+      'End odometer reading must be greater than or equal to start reading.',
+      400,
+    );
+  }
+
+  const totalMileage = odometerReading - booking.odometerReadings.start;
+  const rentalDays = calculateDays(booking.startDate, booking.endDate);
+
+  const averageDailyMileage = totalMileage / rentalDays;
+  if (averageDailyMileage > MAX_REASONABLE_DAILY_MILEAGE_KM) {
+    throw new AppError(
+      `Total mileage (${totalMileage}km over ${rentalDays} day${rentalDays > 1 ? 's' : ''}) exceeds reasonable limit (${MAX_REASONABLE_DAILY_MILEAGE_KM}km/day average). Please verify the odometer reading.`,
+      400,
+    );
+  }
+
+  let excessMileageFee = 0;
+  if (
+    booking.usageLimits.allowedMileagePerDay !== null &&
+    booking.usageLimits.allowedMileagePerDay > 0
+  ) {
+    const allowedMileage =
+      booking.usageLimits.allowedMileagePerDay * rentalDays;
+    const excessMileage = Math.max(0, totalMileage - allowedMileage);
+
+    if (excessMileage > 0 && booking.usageLimits.excessMileageFee > 0) {
+      excessMileageFee =
+        Math.round(excessMileage * booking.usageLimits.excessMileageFee * 100) /
+        100;
+    }
+  }
+
+  booking.priceBreakdown.excessMileageFee = excessMileageFee;
+
+  const { basePrice, discountAmount, deliveryFee, serviceFee } =
+    booking.priceBreakdown;
+  booking.totalPrice =
+    Math.round(
+      (basePrice -
+        discountAmount +
+        deliveryFee +
+        serviceFee +
+        excessMileageFee) *
+        100,
+    ) / 100;
+
+  booking.status = 'completed';
+  booking.odometerReadings.end = odometerReading;
+
+  await booking.save();
+
+  const getCarId = (): mongoose.Types.ObjectId => {
+    if (!booking.car) {
+      throw new AppError('Car information is missing.', 500);
+    }
+    if (booking.car instanceof mongoose.Types.ObjectId) {
+      return booking.car;
+    }
+    const carDoc = booking.car as any;
+    return (carDoc._id as mongoose.Types.ObjectId) || booking.car;
+  };
+
+  const carId = getCarId();
+  await Car.findByIdAndUpdate(carId, {
+    mileage: odometerReading,
+  });
+
+  return booking;
+};
+
+const calculateCancellationRefund = (
+  policy: 'flexible' | 'moderate' | 'strict',
+  bookingCreatedAt: Date,
+  tripStartDate: Date,
+  totalPrice: number,
+  securityDeposit: number,
+  priceBreakdown: IPriceBreakdown,
+): { refundAmount: number; cancellationFee: number } => {
+  const now = new Date();
+  const hoursSinceBooking =
+    (now.getTime() - bookingCreatedAt.getTime()) / (1000 * 60 * 60);
+  const hoursUntilTrip =
+    (tripStartDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  if (hoursSinceBooking <= 1) {
+    return {
+      refundAmount: totalPrice,
+      cancellationFee: 0,
+    };
+  }
+
+  const baseRefundableAmount =
+    priceBreakdown.basePrice -
+    priceBreakdown.discountAmount +
+    priceBreakdown.deliveryFee;
+
+  let deductionAmount = 0;
+
+  switch (policy) {
+    case 'flexible':
+      if (hoursUntilTrip >= 24) {
+        deductionAmount = 0;
+      } else {
+        const ratePerDay = priceBreakdown.basePrice / priceBreakdown.days;
+        deductionAmount = ratePerDay;
+      }
+      break;
+
+    case 'moderate':
+      if (hoursUntilTrip >= 72) {
+        deductionAmount = 0;
+      } else {
+        deductionAmount = baseRefundableAmount * 0.5;
+      }
+      break;
+
+    case 'strict':
+      if (hoursUntilTrip >= 168) {
+        deductionAmount = baseRefundableAmount * 0.5;
+      } else {
+        deductionAmount = baseRefundableAmount;
+      }
+      break;
+  }
+
+  const refundFromPrice = baseRefundableAmount - deductionAmount;
+  const totalRefund = refundFromPrice + securityDeposit;
+  const totalFee = deductionAmount + priceBreakdown.serviceFee;
+
+  return {
+    refundAmount: Math.round(totalRefund * 100) / 100,
+    cancellationFee: Math.round(totalFee * 100) / 100,
+  };
+};
+
+export const cancelBooking = async (
+  bookingId: string,
+  userId: string,
+  reason?: string,
+): Promise<IBookingDocument> => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) throw new AppError('Booking not found', 404);
+
+  const listing = await RentalListing.findById(booking.listing);
+  if (!listing) throw new AppError('Listing not found', 404);
+
+  const getUserId = (
+    user: mongoose.Types.ObjectId | IUserDocument | undefined,
+  ): string => {
+    if (!user) {
+      throw new AppError('User information is missing.', 500);
+    }
+    if (user instanceof mongoose.Types.ObjectId) {
+      return user.toString();
+    }
+    const userDoc = user as unknown as IUserDocument;
+    return (userDoc._id as mongoose.Types.ObjectId).toString();
+  };
+
+  const renterId = getUserId(booking.renter);
+  const ownerId = getUserId(booking.owner);
+
+  if (userId !== renterId && userId !== ownerId) {
+    throw new AppError('Not authorized to cancel this booking', 403);
+  }
+
+  if (
+    ['active', 'completed', 'cancelled', 'rejected'].includes(booking.status)
+  ) {
+    throw new AppError(
+      `Cannot cancel a booking that is ${booking.status}`,
+      400,
+    );
+  }
+
+  let refundAmount = 0;
+  let cancellationFee = 0;
+
+  if (userId === ownerId) {
+    refundAmount = booking.totalPrice + booking.securityDeposit;
+    cancellationFee = 0;
+  } else {
+    if (booking.status === 'pending') {
+      refundAmount = booking.totalPrice + booking.securityDeposit;
+      cancellationFee = 0;
+    } else {
+      const result = calculateCancellationRefund(
+        booking.cancellationPolicy || listing.cancellationPolicy,
+        booking.createdAt,
+        booking.startDate,
+        booking.totalPrice,
+        booking.securityDeposit,
+        booking.priceBreakdown,
+      );
+      refundAmount = result.refundAmount;
+      cancellationFee = result.cancellationFee;
+    }
+  }
+
+  booking.status = 'cancelled';
+  booking.cancellationReason = reason;
+  booking.refundAmount = refundAmount;
+  booking.cancellationFee = cancellationFee;
+  booking.cancelledBy = userId === ownerId ? 'owner' : 'renter';
+  booking.cancelledAt = new Date();
+
+  booking.priceBreakdown.refundAmount = refundAmount;
+  booking.priceBreakdown.cancellationFee = cancellationFee;
+
+  if (booking.paymentStatus === 'paid' && refundAmount > 0) {
+    booking.paymentStatus = 'refunded';
+  }
+
+  await booking.save();
+
   return booking;
 };

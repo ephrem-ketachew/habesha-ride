@@ -4,6 +4,8 @@ import * as bookingService from '../services/booking.service.js';
 import {
   CreateBookingInput,
   UpdateBookingStatusInput,
+  StartBookingInput,
+  CompleteBookingInput,
 } from '../validation/booking.validation.js';
 
 export const createBookingHandler = catchAsync(
@@ -66,6 +68,42 @@ export const updateBookingStatusHandler = catchAsync(
       req.user!.id,
       status,
       cancellationReason,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: { booking },
+    });
+  },
+);
+
+export const startBookingHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { odometer } = req.body as StartBookingInput;
+
+    const booking = await bookingService.startBooking(
+      id,
+      req.user!.id,
+      odometer,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: { booking },
+    });
+  },
+);
+
+export const completeBookingHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { odometer } = req.body as CompleteBookingInput;
+
+    const booking = await bookingService.completeBooking(
+      id,
+      req.user!.id,
+      odometer,
     );
 
     res.status(200).json({

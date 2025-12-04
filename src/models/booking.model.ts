@@ -88,6 +88,24 @@
  *               default: 0
  *               description: Service fee (5% of basePrice - discountAmount, rounded to 2 decimal places)
  *               example: 450.00
+ *             excessMileageFee:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Excess mileage fee charged if the renter exceeds the allowed mileage (calculated at booking completion, rounded to 2 decimal places)
+ *               example: 500.00
+ *             cancellationFee:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Cancellation fee amount retained by owner/platform (calculated when booking is cancelled, rounded to 2 decimal places)
+ *               example: 0.00
+ *             refundAmount:
+ *               type: number
+ *               minimum: 0
+ *               default: 0
+ *               description: Refund amount returned to renter (calculated when booking is cancelled, rounded to 2 decimal places)
+ *               example: 0.00
  *           description: Detailed breakdown of the booking price
  *         usageLimits:
  *           type: object
@@ -153,6 +171,34 @@
  *           type: string
  *           description: Reason for cancellation (if booking was cancelled)
  *           example: "Change of plans"
+ *         cancellationPolicy:
+ *           type: string
+ *           enum: [flexible, moderate, strict]
+ *           default: moderate
+ *           description: Cancellation policy snapshot (copied from listing at booking creation). Protects renter from policy changes after booking is made.
+ *           example: moderate
+ *         refundAmount:
+ *           type: number
+ *           minimum: 0
+ *           default: 0
+ *           description: Refund amount returned to renter (calculated when booking is cancelled, rounded to 2 decimal places)
+ *           example: 0.00
+ *         cancellationFee:
+ *           type: number
+ *           minimum: 0
+ *           default: 0
+ *           description: Cancellation fee amount retained by owner/platform (calculated when booking is cancelled, rounded to 2 decimal places)
+ *           example: 0.00
+ *         cancelledBy:
+ *           type: string
+ *           enum: [renter, owner]
+ *           description: Who initiated the cancellation (if booking was cancelled)
+ *           example: renter
+ *         cancelledAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when the booking was cancelled (if booking was cancelled)
+ *           example: "2024-01-20T14:30:00Z"
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -179,6 +225,9 @@
  *           deliveryFee: 300.00
  *           discountAmount: 1000.00
  *           serviceFee: 450.00
+ *           excessMileageFee: 0.00
+ *           cancellationFee: 0.00
+ *           refundAmount: 0.00
  *         usageLimits:
  *           allowedMileagePerDay: 200
  *           excessMileageFee: 5
@@ -189,6 +238,11 @@
  *         paymentStatus: "paid"
  *         paymentTransactionId: "txn_1234567890abcdef"
  *         cancellationReason: null
+ *         cancellationPolicy: "moderate"
+ *         refundAmount: 0.00
+ *         cancellationFee: 0.00
+ *         cancelledBy: null
+ *         cancelledAt: null
  *         createdAt: "2024-01-15T08:30:00Z"
  *         updatedAt: "2024-01-15T10:45:00Z"
  */
@@ -255,6 +309,9 @@ const bookingSchema = new Schema<IBookingDocument>(
       deliveryFee: { type: Number, default: 0 },
       discountAmount: { type: Number, default: 0 },
       serviceFee: { type: Number, default: 0 },
+      excessMileageFee: { type: Number, default: 0 },
+      cancellationFee: { type: Number, default: 0 },
+      refundAmount: { type: Number, default: 0 },
     },
 
     usageLimits: {
@@ -295,6 +352,28 @@ const bookingSchema = new Schema<IBookingDocument>(
     },
     cancellationReason: {
       type: String,
+    },
+    cancellationPolicy: {
+      type: String,
+      enum: ['flexible', 'moderate', 'strict'],
+      default: 'moderate',
+    },
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    cancellationFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    cancelledBy: {
+      type: String,
+      enum: ['renter', 'owner'],
+    },
+    cancelledAt: {
+      type: Date,
     },
   },
   {

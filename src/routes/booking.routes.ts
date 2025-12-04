@@ -6,6 +6,8 @@ import {
   createBookingSchema,
   getBookingIdSchema,
   updateBookingStatusBodySchema,
+  startBookingBodySchema,
+  completeBookingBodySchema,
 } from '../validation/booking.validation.js';
 
 const router = Router();
@@ -251,7 +253,14 @@ router.get(
  *                 example: "Change of plans"
  *     responses:
  *       200:
- *         description: Booking status updated successfully
+ *         description: |
+ *           Booking status updated successfully. If cancelled, refundAmount and cancellationFee are calculated based on the cancellation policy.
+ *           The booking will include:
+ *           - refundAmount: Calculated refund amount based on policy and timing
+ *           - cancellationFee: Calculated fee retained by owner/platform
+ *           - cancelledBy: 'renter' or 'owner'
+ *           - cancelledAt: Timestamp of cancellation
+ *           - paymentStatus: Updated to 'refunded' if payment was made and refund > 0
  *         content:
  *           application/json:
  *             schema:
@@ -266,8 +275,15 @@ router.get(
  *                     booking:
  *                       $ref: '#/components/schemas/Booking'
  *       400:
- *         description: Bad request - invalid ID format, invalid status transition, or booking already in target status
+ *         description: |
+ *           Bad request - invalid ID format, invalid status transition, or booking already in target status.
+ *           For cancellations: Cannot cancel active or completed bookings.
  *       401:
+ *         description: Unauthorized - valid JWT cookie required
+ *       403:
+ *         description: Forbidden - not authorized to perform this action (e.g., renter trying to confirm their own booking)
+ *       404:
+ *         description: Booking not found
  *         description: Unauthorized - valid JWT cookie required
  *       403:
  *         description: Forbidden - not authorized to perform this action (e.g., renter trying to confirm their own booking)
@@ -279,6 +295,139 @@ router.patch(
   validate(getBookingIdSchema, 'params'),
   validate(updateBookingStatusBodySchema, 'body'),
   bookingController.updateBookingStatusHandler,
+);
+
+/**
+ * @swagger
+ * /bookings/{id}/start:
+ *   post:
+ *     summary: Start a booking (pickup)
+ *     tags: [Bookings]
+ *     description: |
+ *       Mark a confirmed booking as active and record the start odometer reading.
+ *       Only the renter can start a booking. The booking must be in 'confirmed' status
+ *       and can be started up to 1 hour before the scheduled start date.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID - must be a valid MongoDB ObjectId
+ *         example: 507f1f77bcf86cd799439011
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - odometer
+ *             properties:
+ *               odometer:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Odometer reading at pickup (in kilometers). Must be >= car's current mileage and not exceed it by more than 100km.
+ *                 example: 45000
+ *     responses:
+ *       200:
+ *         description: Booking started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     booking:
+ *                       $ref: '#/components/schemas/Booking'
+ *       400:
+ *         description: Bad request - invalid status, odometer already recorded, attempted to start more than 1 hour before scheduled start date, odometer reading is less than car's current mileage, or exceeds it by more than 100km
+ *       401:
+ *         description: Unauthorized - valid JWT cookie required
+ *       403:
+ *         description: Forbidden - only renter can start booking
+ *       404:
+ *         description: Booking not found
+ */
+router.post(
+  '/:id/start',
+  validate(getBookingIdSchema, 'params'),
+  validate(startBookingBodySchema, 'body'),
+  bookingController.startBookingHandler,
+);
+
+/**
+ * @swagger
+ * /bookings/{id}/complete:
+ *   post:
+ *     summary: Complete a booking (dropoff)
+ *     tags: [Bookings]
+ *     description: |
+ *       Mark an active booking as completed and record the end odometer reading.
+ *       Both renter and owner can complete a booking. The booking must be in 'active' status
+ *       and the start odometer reading must exist. Excess mileage fees will be calculated
+ *       if applicable. The car's mileage will be updated to reflect the end odometer reading.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID - must be a valid MongoDB ObjectId
+ *         example: 507f1f77bcf86cd799439011
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - odometer
+ *             properties:
+ *               odometer:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Odometer reading at dropoff (in kilometers). Must be >= start reading and average daily mileage must not exceed 1000km/day.
+ *                 example: 45200
+ *     responses:
+ *       200:
+ *         description: Booking completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     booking:
+ *                       $ref: '#/components/schemas/Booking'
+ *       400:
+ *         description: Bad request - invalid status, odometer already recorded, invalid reading, or total mileage exceeds reasonable daily limit (1000km/day)
+ *       401:
+ *         description: Unauthorized - valid JWT cookie required
+ *       403:
+ *         description: Forbidden - only renter or owner can complete booking
+ *       404:
+ *         description: Booking not found
+ */
+router.post(
+  '/:id/complete',
+  validate(getBookingIdSchema, 'params'),
+  validate(completeBookingBodySchema, 'body'),
+  bookingController.completeBookingHandler,
 );
 
 export default router;

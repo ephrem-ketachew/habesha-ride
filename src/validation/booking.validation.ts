@@ -46,6 +46,14 @@ export const recordOdometerBodySchema = z.object({
   type: z.enum(['start', 'end']),
 });
 
+export const startBookingBodySchema = z.object({
+  odometer: z.coerce.number().min(0, 'Odometer reading cannot be negative'),
+});
+
+export const completeBookingBodySchema = z.object({
+  odometer: z.coerce.number().min(0, 'Odometer reading cannot be negative'),
+});
+
 export const updatePaymentStatusBodySchema = z.object({
   paymentStatus: paymentStatusEnum,
   paymentTransactionId: z.string().optional(),
@@ -57,6 +65,8 @@ export type UpdateBookingStatusInput = z.infer<
   typeof updateBookingStatusBodySchema
 >;
 export type RecordOdometerInput = z.infer<typeof recordOdometerBodySchema>;
+export type StartBookingInput = z.infer<typeof startBookingBodySchema>;
+export type CompleteBookingInput = z.infer<typeof completeBookingBodySchema>;
 export type UpdatePaymentStatusInput = z.infer<
   typeof updatePaymentStatusBodySchema
 >;
