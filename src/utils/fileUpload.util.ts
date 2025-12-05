@@ -26,6 +26,26 @@ const storage = new CloudinaryStorage({
   },
 });
 
+const userPhotoStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req: Request, file: Express.Multer.File) => {
+    const userId = req.user?.id || 'misc';
+    const folder = `kech/users/${userId}`;
+    const filename = `user-${userId}-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+    return {
+      folder,
+      public_id: filename,
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+      transformation: [
+        { width: 500, height: 500, crop: 'fill', gravity: 'face' },
+        { quality: 'auto:good' }
+      ],
+    };
+  },
+});
+
+
 const fileFilter = (
   req: Request,
   file: Express.Multer.File,
@@ -44,4 +64,13 @@ export const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
+});
+
+
+export const uploadUserPhoto = multer({
+  storage: userPhotoStorage,
+  fileFilter,
+  limits: { 
+    fileSize: 3 * 1024 * 1024,
+  }, 
 });

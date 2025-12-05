@@ -34,7 +34,7 @@ export const updateMeSchema = z
       .regex(/^[0-9]{7,15}$/, 'Phone number must contain 7-15 digits')
       .optional(),
 
-    //  profileImage: z.string().url().optional(),
+    profileImage: z.string().url().optional(),
   })
   .strict();
 
