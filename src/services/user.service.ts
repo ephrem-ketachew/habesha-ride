@@ -7,7 +7,7 @@ import { GetUsersAdminQuery } from '../validation/admin.validation.js';
 
 export const updatePrfile = async (
   userId: string,
-  payload: UpdateProfileInput,
+  payload: UpdateProfileInput & { profileImage?: string }
 ) => {
   const user = await User.findByIdAndUpdate(
     userId,

@@ -6,6 +6,7 @@ import { userProfile,
  } from "../controllers/user.controller.js";
  import { updateMeSchema } from '../validation/user.schema.js';
  import { validate } from '../middleware/validate.middleware.js';
+ import { uploadUserPhoto } from '../utils/fileUpload.util.js';
 
 
 const router = Router();
@@ -52,7 +53,7 @@ router.get('/userProfile', protect, userProfile);
  *     requestBody:
  *       required: false
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -73,6 +74,10 @@ router.get('/userProfile', protect, userProfile);
  *                 pattern: '^[0-9]{7,15}$'
  *                 description: Phone number with 7-15 digits only, no special characters (optional)
  *                 example: "251911234567"
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: Upload a single profile image (optional)
  *     responses:
  *       200:
  *         description: Profile updated successfully with the updated user object
@@ -94,6 +99,12 @@ router.get('/userProfile', protect, userProfile);
  *       401:
  *         description: Unauthorized - valid JWT cookie required
  */
-router.patch('/updateProfile', protect, validate(updateMeSchema), updateProfileHandler);
+router.patch(
+  '/updateProfile',
+  protect,
+  uploadUserPhoto.single('profileImage'),
+  validate(updateMeSchema),
+  updateProfileHandler
+);
 
 export default router;
