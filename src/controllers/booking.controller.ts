@@ -10,14 +10,14 @@ import {
 
 export const createBookingHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const booking = await bookingService.createBooking(
+    const result = await bookingService.createBooking(
       req.user!.id,
       req.body as CreateBookingInput & { deliveryRequested?: boolean },
     );
 
     res.status(201).json({
       status: 'success',
-      data: { booking },
+      data: result,
     });
   },
 );

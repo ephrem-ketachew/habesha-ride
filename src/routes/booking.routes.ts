@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { protect } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
+import { verifyPaymentCompleted } from '../middleware/payment.middleware.js';
 import * as bookingController from '../controllers/booking.controller.js';
 import {
   createBookingSchema,
@@ -55,7 +56,7 @@ router.use(protect);
  *                 example: true
  *     responses:
  *       201:
- *         description: Booking created successfully
+ *         description: Booking created successfully. Payment is required to confirm.
  *         content:
  *           application/json:
  *             schema:
@@ -69,6 +70,18 @@ router.use(protect);
  *                   properties:
  *                     booking:
  *                       $ref: '#/components/schemas/Booking'
+ *                     requiresPayment:
+ *                       type: boolean
+ *                       example: true
+ *                     paymentAmount:
+ *                       type: number
+ *                       example: 12500.50
+ *                     nextStep:
+ *                       type: string
+ *                       example: initialize_payment
+ *                     message:
+ *                       type: string
+ *                       example: Booking created successfully. Please proceed with payment to confirm your reservation.
  *       400:
  *         description: Bad request - validation error, dates in past, endDate before startDate, self-booking attempt, or delivery not available
  *       401:
@@ -360,6 +373,7 @@ router.post(
   '/:id/start',
   validate(getBookingIdSchema, 'params'),
   validate(startBookingBodySchema, 'body'),
+  verifyPaymentCompleted, // Verify payment before starting booking
   bookingController.startBookingHandler,
 );
 

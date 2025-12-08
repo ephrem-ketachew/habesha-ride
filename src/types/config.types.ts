@@ -39,6 +39,19 @@ interface GoogleOAuthConfig {
   redirectUri?: string;
 }
 
+interface ChapaConfig {
+  secretKey: string;
+  publicKey?: string;
+  webhookSecret: string;
+  baseUrl: string;
+}
+
+interface PaymentConfig {
+  callbackUrl: string;
+  returnUrl: string;
+  webhookUrl: string;
+}
+
 export interface AppConfig {
   nodeEnv: 'development' | 'production' | 'test';
   isProduction: boolean;
@@ -56,4 +69,6 @@ export interface AppConfig {
   brevo: BrevoConfig;
   googleOAuth: GoogleOAuthConfig;
   superAdmin: SuperAdminConfig;
+  chapa: ChapaConfig;
+  payment: PaymentConfig;
 }

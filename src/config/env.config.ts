@@ -111,6 +111,19 @@ const config: AppConfig = {
     password: getEnvVar('SUPER_ADMIN_PASSWORD', false),
     phone: getEnvVar('SUPER_ADMIN_PHONE', false),
   },
+
+  chapa: {
+    secretKey: getEnvVar('CHAPA_SECRET_KEY', true)!,
+    publicKey: getEnvVar('CHAPA_PUBLIC_KEY', false),
+    webhookSecret: getEnvVar('CHAPA_WEBHOOK_SECRET', true)!,
+    baseUrl: getEnvVar('CHAPA_BASE_URL', false, 'https://api.chapa.co/v1')!,
+  },
+
+  payment: {
+    callbackUrl: `${getEnvVar('BASE_URL', false, 'http://localhost:3000')}${getEnvVar('PAYMENT_CALLBACK_PATH', false, '/payment/callback')}`,
+    returnUrl: `${getEnvVar('CLIENT_URL', true)}${getEnvVar('PAYMENT_RETURN_PATH', false, '/bookings')}`,
+    webhookUrl: `${getEnvVar('BASE_URL', false, 'http://localhost:3000')}${getEnvVar('PAYMENT_WEBHOOK_PATH', false, '/api/v1/payments/webhook')}`,
+  },
 };
 
 export default isProduction ? Object.freeze(config) : config;

@@ -24,6 +24,8 @@ import rentalRoutes from './routes/rental.routes.js';
 import saleRoutes from './routes/sale.routes.js';
 import listingRoutes from './routes/listing.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
+import { chapaWebhookHandler } from './controllers/payment.controller.js';
 
 const app: Express = express();
 
@@ -60,6 +62,12 @@ const limiter = rateLimit({
 
 // app.use('/api', limiter);
 
+app.post(
+  '/api/v1/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  chapaWebhookHandler,
+);
+
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
@@ -77,6 +85,7 @@ app.use('/api/v1/listings/rent', rentalRoutes);
 app.use('/api/v1/listings/sale', saleRoutes);
 app.use('/api/v1/listings', listingRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/payments', paymentRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({

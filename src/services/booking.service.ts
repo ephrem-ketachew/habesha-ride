@@ -6,6 +6,7 @@ import { CreateBookingInput } from '../validation/booking.validation.js';
 import AppError from '../utils/appError.util.js';
 import { IUserDocument } from '../types/user.types.js';
 import { IPriceBreakdown, IBookingDocument } from '../types/booking.types.js';
+import logger from '../config/logger.config.js';
 
 const SERVICE_FEE_PERCENT = 0.05;
 const MAX_ODOMETER_TOLERANCE_KM = 100;
@@ -172,7 +173,14 @@ export const createBooking = async (
     paymentStatus: 'pending',
   });
 
-  return booking;
+  return {
+    booking,
+    requiresPayment: true,
+    paymentAmount: totalPrice + listing.securityDeposit,
+    nextStep: 'initialize_payment',
+    message:
+      'Booking created successfully. Please proceed with payment to confirm your reservation.',
+  };
 };
 
 export const getMyBookings = async (
@@ -312,6 +320,13 @@ export const startBooking = async (
   if (booking.status !== 'confirmed') {
     throw new AppError(
       `Cannot start a booking that is ${booking.status}. Booking must be confirmed.`,
+      400,
+    );
+  }
+
+  if (booking.paymentStatus !== 'paid') {
+    throw new AppError(
+      'Payment must be completed before starting the booking.',
       400,
     );
   }
@@ -640,6 +655,35 @@ export const cancelBooking = async (
   }
 
   await booking.save();
+
+  if (booking.paymentStatus === 'refunded' && refundAmount > 0) {
+    try {
+      const { createRefundTransaction } = await import('./payment.service.js');
+
+      await createRefundTransaction(
+        bookingId,
+        refundAmount,
+        reason || 'Booking cancelled',
+      );
+
+      logger.info(
+        {
+          bookingId,
+          refundAmount,
+          cancelledBy: booking.cancelledBy,
+        },
+        'Refund transaction created for cancelled booking',
+      );
+    } catch (error: any) {
+      logger.error(
+        {
+          bookingId,
+          error: error.message,
+        },
+        'Failed to create refund transaction, but booking was cancelled',
+      );
+    }
+  }
 
   return booking;
 };
