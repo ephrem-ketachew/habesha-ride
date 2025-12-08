@@ -35,12 +35,21 @@ export const updateProfileHandler = catchAsync(
       throw new AppError('User not found', 401);
     }
 
-    const updatePayload: UpdateProfileInput & { profileImage?: string } = { ...req.body };
+    const updatePayload: UpdateProfileInput & { profileImage?: string } = {
+      ...req.body,
+    };
+
+    const oldProfileImageUrl = req.user.profileImage;
+
     if (req.file?.path) {
       updatePayload.profileImage = req.file.path;
     }
 
-    const user = await userService.updatePrfile(req.user.id, updatePayload);
+    const user = await userService.updateProfile(
+      req.user.id,
+      updatePayload,
+      oldProfileImageUrl,
+    );
 
     res.status(200).json({
       status: 'success',

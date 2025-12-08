@@ -19,7 +19,9 @@ const catchAsync = (fn: AsyncController) => {
         );
         await deleteCloudinaryResources(publicIds);
       }
-
+      if (req.file && req.file.filename) {
+        await deleteCloudinaryResources([req.file.filename]);
+      }
       next(err);
     });
   };

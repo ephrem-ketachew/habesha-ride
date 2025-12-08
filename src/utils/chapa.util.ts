@@ -72,10 +72,28 @@ export const initializePayment = async (
 
     if (axios.isAxiosError(error)) {
       const status = error.response?.status || 500;
-      const message =
+      let message =
         error.response?.data?.message ||
         error.message ||
         'Payment initialization failed';
+
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        !Array.isArray(message)
+      ) {
+        const validationErrors = Object.entries(message)
+          .map(([field, errors]) => {
+            const errorMessages = Array.isArray(errors)
+              ? errors.join(', ')
+              : String(errors);
+            return `${field}: ${errorMessages}`;
+          })
+          .join('; ');
+        message = `Validation failed: ${validationErrors}`;
+      } else if (Array.isArray(message)) {
+        message = message.join('; ');
+      }
 
       logger.error(
         {
@@ -87,7 +105,7 @@ export const initializePayment = async (
         'Chapa API error: initializePayment',
       );
 
-      throw new AppError(message, status);
+      throw new AppError(String(message), status);
     }
 
     logger.error(
@@ -144,10 +162,28 @@ export const verifyPayment = async (
 
     if (axios.isAxiosError(error)) {
       const status = error.response?.status || 500;
-      const message =
+      let message =
         error.response?.data?.message ||
         error.message ||
         'Payment verification failed';
+
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        !Array.isArray(message)
+      ) {
+        const validationErrors = Object.entries(message)
+          .map(([field, errors]) => {
+            const errorMessages = Array.isArray(errors)
+              ? errors.join(', ')
+              : String(errors);
+            return `${field}: ${errorMessages}`;
+          })
+          .join('; ');
+        message = `Validation failed: ${validationErrors}`;
+      } else if (Array.isArray(message)) {
+        message = message.join('; ');
+      }
 
       logger.error(
         {
@@ -166,7 +202,7 @@ export const verifyPayment = async (
         );
       }
 
-      throw new AppError(message, status);
+      throw new AppError(String(message), status);
     }
 
     logger.error(

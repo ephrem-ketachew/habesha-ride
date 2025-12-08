@@ -4,16 +4,89 @@ import AppError from '../utils/appError.util.js';
 import { UpdateProfileInput } from '../validation/user.schema.js';
 import { UserRole, UserStatus } from '../types/user.types.js';
 import { GetUsersAdminQuery } from '../validation/admin.validation.js';
+import { deleteCloudinaryResources } from '../utils/cloudinary.util.js';
 
-export const updatePrfile = async (
+const extractPublicIdFromUrl = (url: string): string | null => {
+  if (!url || !url.includes('cloudinary.com')) return null;
+
+  try {
+    const uploadIndex = url.indexOf('/upload/');
+    if (uploadIndex === -1) return null;
+
+    const pathAfterUpload = url.substring(uploadIndex + 8);
+
+    const versionMatch = pathAfterUpload.match(/^v\d+\//);
+    const pathWithoutVersion = versionMatch
+      ? pathAfterUpload.substring(versionMatch[0].length)
+      : pathAfterUpload;
+
+    const publicId = pathWithoutVersion.replace(/\.[^/.]+$/, '');
+
+    return publicId || null;
+  } catch {
+    return null;
+  }
+};
+
+export const updateProfile = async (
   userId: string,
-  payload: UpdateProfileInput & { profileImage?: string }
+  payload: UpdateProfileInput & { profileImage?: string },
+  oldProfileImageUrl?: string,
 ) => {
+  const oldUser = await User.findById(userId);
+  if (!oldUser) throw new AppError('User not found', 404);
+
+  if (payload.phoneNumber && oldUser.phoneNumber !== payload.phoneNumber) {
+    const existingUser = await User.findOne({
+      phoneNumber: payload.phoneNumber,
+      _id: { $ne: userId },
+    });
+
+    if (existingUser) {
+      throw new AppError(
+        'Phone number is already in use by another user.',
+        400,
+      );
+    }
+  }
+
+  if (payload.profileImage && oldUser.profileImage) {
+    const DEFAULT_PROFILE_IMAGE =
+      'https://res.cloudinary.com/dxhkryxzk/image/upload/v1755980278/avatar2_bkwawy.png';
+
+    if (
+      oldUser.profileImage !== DEFAULT_PROFILE_IMAGE &&
+      oldUser.profileImage.includes('cloudinary.com')
+    ) {
+      const oldPublicId = extractPublicIdFromUrl(oldUser.profileImage);
+      if (oldPublicId) {
+        deleteCloudinaryResources([oldPublicId]).catch((err) => {
+          console.error('Failed to delete old profile image:', err);
+        });
+      }
+    }
+  }
+
   const user = await User.findByIdAndUpdate(
     userId,
     { $set: payload },
     { new: true, runValidators: true },
-  );
+  ).catch((error: any) => {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      if (field === 'phoneNumber') {
+        throw new AppError(
+          'Phone number is already in use by another user.',
+          400,
+        );
+      }
+      if (field === 'email') {
+        throw new AppError('Email is already in use by another user.', 400);
+      }
+      throw new AppError(`${field} must be unique.`, 400);
+    }
+    throw error;
+  });
 
   if (!user) throw new AppError('User not found', 404);
   return user;

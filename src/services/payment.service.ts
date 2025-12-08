@@ -21,6 +21,7 @@ import {
 import * as paymentEmailService from '../utils/paymentEmail.util.js';
 
 export const initializePayment = async (bookingId: string, userId: string) => {
+  console.log('INITIALIZING PAYMENT FOR BOOKING:', bookingId);
   const booking = await Booking.findById(bookingId)
     .populate('renter')
     .populate('listing');
@@ -111,8 +112,8 @@ export const initializePayment = async (bookingId: string, userId: string) => {
     callback_url: config.payment.callbackUrl,
     return_url: config.payment.returnUrl,
     customization: {
-      title: 'Kech.ai - Car Rental Payment',
-      description: `Booking #${bookingId.substring(bookingId.length - 8)}`,
+      title: 'Kech Car Rental',
+      description: `Booking ${bookingId.substring(bookingId.length - 8)}`,
     },
   });
 
