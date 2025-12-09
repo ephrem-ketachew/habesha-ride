@@ -227,19 +227,19 @@ export const mapChapaStatusToTransactionStatus = (
 };
 
 export const verifyWebhookSignature = (
-  payload: string | Buffer,
+  payload: string,
   signature: string,
+  headerName: string = 'signature',
 ): boolean => {
   if (!signature) {
-    throw new AppError('Missing webhook signature', 400);
+    return false;
   }
 
-  const receivedSignature = signature.replace(/^sha256=/, '');
+  const receivedSignature = signature.replace(/^sha256=/, '').trim();
 
-  // Check if webhook secret is configured
   if (!config.chapa.webhookSecret) {
     logger.error({}, 'Webhook secret not configured');
-    throw new AppError('Webhook secret not configured', 500);
+    return false;
   }
 
   const computedSignature = crypto
@@ -247,24 +247,17 @@ export const verifyWebhookSignature = (
     .update(payload)
     .digest('hex');
 
-  console.log(
-    'DEBUG: Config Secret:',
-    config.chapa.webhookSecret ? 'LOADED' : 'MISSING',
-  );
-  console.log('DEBUG: Received Sig:', signature);
-  console.log('DEBUG: Computed Sig:', computedSignature);
-
   try {
-    // Validate hex format before comparison
     if (!/^[0-9a-f]+$/i.test(receivedSignature)) {
       logger.error(
         {
+          headerName,
           receivedSignatureLength: receivedSignature.length,
           receivedSignaturePrefix: receivedSignature.substring(0, 10),
         },
         'Invalid signature format (not hex)',
       );
-      throw new AppError('Invalid webhook signature format', 403);
+      return false;
     }
 
     const isValid = crypto.timingSafeEqual(
@@ -273,33 +266,39 @@ export const verifyWebhookSignature = (
     );
 
     if (!isValid) {
-      logger.error(
+      logger.debug(
         {
+          headerName,
           receivedLength: receivedSignature.length,
           computedLength: computedSignature.length,
           receivedPrefix: receivedSignature.substring(0, 10),
           computedPrefix: computedSignature.substring(0, 10),
-          webhookSecretConfigured: !!config.chapa.webhookSecret,
-          webhookSecretLength: config.chapa.webhookSecret?.length,
+          payloadLength: payload.length,
+          payloadPreview: payload.substring(0, 100),
         },
-        'Signature mismatch - check webhook secret matches Chapa dashboard',
+        `Signature mismatch for ${headerName}`,
       );
-      throw new AppError('Invalid webhook signature', 403);
+    } else {
+      logger.info(
+        {
+          headerName,
+          receivedPrefix: receivedSignature.substring(0, 10),
+        },
+        `Signature verified successfully using ${headerName}`,
+      );
     }
 
-    return true;
+    return isValid;
   } catch (error: any) {
-    if (error instanceof AppError) {
-      throw error;
-    }
     logger.error(
       {
+        headerName,
         error: error.message,
         receivedSignatureLength: receivedSignature.length,
       },
       'Error during signature verification',
     );
-    throw new AppError('Invalid webhook signature', 403);
+    return false;
   }
 };
 

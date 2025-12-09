@@ -255,15 +255,15 @@ export const verifyPayment = async (tx_ref: string, userId: string) => {
 };
 
 export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
-  const { event, data } = webhookPayload;
-  const tx_ref = data.tx_ref;
+  const { event, tx_ref, status, created_at, transaction_id, payment_method } =
+    webhookPayload;
 
   logger.info({ tx_ref, event }, 'Processing Chapa webhook');
 
   const idempotencyKey = generateWebhookIdempotencyKey(
     tx_ref,
     event,
-    new Date(data.created_at).getTime(),
+    new Date(created_at).getTime(),
   );
 
   const existingWebhook = await Transaction.findOne({
@@ -298,14 +298,14 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
         webhookReceivedAt: new Date(),
         idempotencyKey,
         status: chapaService.mapChapaStatusToTransactionStatus(
-          data.status,
+          status,
         ) as TransactionStatus,
-        chapaTransactionId: data.transaction_id,
-        chapaPaymentMethod: data.payment_method,
+        chapaTransactionId: transaction_id,
+        chapaPaymentMethod: payment_method,
         completedAt:
-          data.status === 'success' ? new Date() : transaction.completedAt,
+          status === 'success' ? new Date() : transaction.completedAt,
         failedAt:
-          data.status === 'failed' || data.status === 'cancelled'
+          status === 'failed' || status === 'cancelled'
             ? new Date()
             : transaction.failedAt,
       },
@@ -322,7 +322,7 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
     {
       tx_ref,
       transactionId: String(updated._id),
-      status: data.status,
+      status: status,
     },
     'Webhook processed, updating booking',
   );
@@ -330,9 +330,9 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
   const booking = await Booking.findByIdAndUpdate(
     transaction.booking,
     {
-      paymentStatus: data.status === 'success' ? 'paid' : 'failed',
+      paymentStatus: status === 'success' ? 'paid' : 'failed',
       paymentTransactionId:
-        data.status === 'success' ? String(updated._id) : undefined,
+        status === 'success' ? String(updated._id) : undefined,
     },
     { new: true },
   )
@@ -353,7 +353,7 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
     return updated;
   }
 
-  if (data.status === 'success') {
+  if (status === 'success') {
     await autoConfirmBookingIfApplicable(transaction.booking.toString());
 
     await paymentEmailService.sendPaymentConfirmationEmail(

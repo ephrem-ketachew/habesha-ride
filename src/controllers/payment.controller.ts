@@ -58,30 +58,6 @@ export const chapaWebhookHandler = async (
   next: NextFunction,
 ) => {
   try {
-    // Check multiple possible header names for Chapa signature
-    const signature =
-      (req.headers['chapa-signature'] as string) ||
-      (req.headers['x-chapa-signature'] as string) ||
-      (req.headers['X-Chapa-Signature'] as string);
-
-    if (!signature) {
-      logger.error(
-        {
-          headers: Object.keys(req.headers),
-          availableSignatureHeaders: [
-            req.headers['chapa-signature'],
-            req.headers['x-chapa-signature'],
-            req.headers['X-Chapa-Signature'],
-          ],
-        },
-        'Webhook signature header not found',
-      );
-      return res.status(200).json({
-        status: 'error',
-        message: 'Missing webhook signature',
-      });
-    }
-
     const rawBody = req.body as Buffer;
 
     if (!Buffer.isBuffer(rawBody)) {
@@ -89,6 +65,7 @@ export const chapaWebhookHandler = async (
         {
           bodyType: typeof req.body,
           bodyIsBuffer: Buffer.isBuffer(req.body),
+          contentType: req.headers['content-type'],
         },
         'Webhook body is not a Buffer - middleware configuration issue',
       );
@@ -98,13 +75,76 @@ export const chapaWebhookHandler = async (
       });
     }
 
-    verifyWebhookSignature(rawBody, signature);
+    // Parse the body to JSON (as Chapa documentation shows)
     const payload: IChapaWebhookPayload = JSON.parse(rawBody.toString('utf8'));
+
+    // According to Chapa docs:
+    // - x-chapa-signature: HMAC SHA256 of the event payload signed using secret key
+    // - chapa-signature: HMAC SHA256 of secret key signed using secret key (but example shows body)
+    // We should check BOTH headers - if either is valid, proceed
+    const xChapaSignature = req.headers['x-chapa-signature'] as string;
+    const chapaSignature =
+      (req.headers['chapa-signature'] as string) ||
+      (req.headers['Chapa-Signature'] as string);
+
+    if (!xChapaSignature && !chapaSignature) {
+      logger.error(
+        {
+          headers: Object.keys(req.headers),
+          availableSignatureHeaders: {
+            'x-chapa-signature': req.headers['x-chapa-signature'],
+            'chapa-signature': req.headers['chapa-signature'],
+            'Chapa-Signature': req.headers['Chapa-Signature'],
+          },
+        },
+        'Webhook signature headers not found',
+      );
+      return res.status(200).json({
+        status: 'error',
+        message: 'Missing webhook signature',
+      });
+    }
+
+    // Verify signature(s) - Chapa docs say to check both, if either is valid, proceed
+    // According to example: hash = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex')
+    const bodyString = JSON.stringify(payload); // Stringify the parsed JSON (as per Chapa example)
+    let isValid = false;
+
+    if (xChapaSignature) {
+      isValid = verifyWebhookSignature(
+        bodyString,
+        xChapaSignature,
+        'x-chapa-signature',
+      );
+    }
+
+    if (!isValid && chapaSignature) {
+      isValid = verifyWebhookSignature(
+        bodyString,
+        chapaSignature,
+        'chapa-signature',
+      );
+    }
+
+    if (!isValid) {
+      logger.error(
+        {
+          xChapaSignaturePresent: !!xChapaSignature,
+          chapaSignaturePresent: !!chapaSignature,
+          bodyPreview: bodyString.substring(0, 200),
+        },
+        'Both signature headers failed verification',
+      );
+      return res.status(200).json({
+        status: 'error',
+        message: 'Invalid webhook signature',
+      });
+    }
     logger.info(
       {
-        tx_ref: payload.data?.tx_ref,
+        tx_ref: payload.tx_ref,
         event: payload.event,
-        status: payload.data?.status,
+        status: payload.status,
       },
       'Webhook received and signature verified',
     );
