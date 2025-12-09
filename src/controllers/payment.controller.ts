@@ -58,8 +58,46 @@ export const chapaWebhookHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const signature = req.headers['chapa-signature'] as string;
+    // Check multiple possible header names for Chapa signature
+    const signature =
+      (req.headers['chapa-signature'] as string) ||
+      (req.headers['x-chapa-signature'] as string) ||
+      (req.headers['X-Chapa-Signature'] as string);
+
+    if (!signature) {
+      logger.error(
+        {
+          headers: Object.keys(req.headers),
+          availableSignatureHeaders: [
+            req.headers['chapa-signature'],
+            req.headers['x-chapa-signature'],
+            req.headers['X-Chapa-Signature'],
+          ],
+        },
+        'Webhook signature header not found',
+      );
+      return res.status(200).json({
+        status: 'error',
+        message: 'Missing webhook signature',
+      });
+    }
+
     const rawBody = req.body as Buffer;
+
+    if (!Buffer.isBuffer(rawBody)) {
+      logger.error(
+        {
+          bodyType: typeof req.body,
+          bodyIsBuffer: Buffer.isBuffer(req.body),
+        },
+        'Webhook body is not a Buffer - middleware configuration issue',
+      );
+      return res.status(200).json({
+        status: 'error',
+        message: 'Invalid request body format',
+      });
+    }
+
     verifyWebhookSignature(rawBody, signature);
     const payload: IChapaWebhookPayload = JSON.parse(rawBody.toString('utf8'));
     logger.info(
@@ -79,7 +117,17 @@ export const chapaWebhookHandler = async (
     logger.error(
       {
         error: error.message,
+        errorStack: error.stack,
         body: req.body instanceof Buffer ? 'Buffer' : req.body,
+        signaturePresent: !!(
+          req.headers['chapa-signature'] ||
+          req.headers['x-chapa-signature'] ||
+          req.headers['X-Chapa-Signature']
+        ),
+        signatureHeader:
+          req.headers['chapa-signature'] ||
+          req.headers['x-chapa-signature'] ||
+          req.headers['X-Chapa-Signature'],
       },
       'Webhook processing error',
     );

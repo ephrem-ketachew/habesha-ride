@@ -236,23 +236,69 @@ export const verifyWebhookSignature = (
 
   const receivedSignature = signature.replace(/^sha256=/, '');
 
+  // Check if webhook secret is configured
+  if (!config.chapa.webhookSecret) {
+    logger.error({}, 'Webhook secret not configured');
+    throw new AppError('Webhook secret not configured', 500);
+  }
+
   const computedSignature = crypto
     .createHmac('sha256', config.chapa.webhookSecret)
     .update(payload)
     .digest('hex');
 
+  console.log(
+    'DEBUG: Config Secret:',
+    config.chapa.webhookSecret ? 'LOADED' : 'MISSING',
+  );
+  console.log('DEBUG: Received Sig:', signature);
+  console.log('DEBUG: Computed Sig:', computedSignature);
+
   try {
+    // Validate hex format before comparison
+    if (!/^[0-9a-f]+$/i.test(receivedSignature)) {
+      logger.error(
+        {
+          receivedSignatureLength: receivedSignature.length,
+          receivedSignaturePrefix: receivedSignature.substring(0, 10),
+        },
+        'Invalid signature format (not hex)',
+      );
+      throw new AppError('Invalid webhook signature format', 403);
+    }
+
     const isValid = crypto.timingSafeEqual(
       Buffer.from(receivedSignature, 'hex'),
       Buffer.from(computedSignature, 'hex'),
     );
 
     if (!isValid) {
+      logger.error(
+        {
+          receivedLength: receivedSignature.length,
+          computedLength: computedSignature.length,
+          receivedPrefix: receivedSignature.substring(0, 10),
+          computedPrefix: computedSignature.substring(0, 10),
+          webhookSecretConfigured: !!config.chapa.webhookSecret,
+          webhookSecretLength: config.chapa.webhookSecret?.length,
+        },
+        'Signature mismatch - check webhook secret matches Chapa dashboard',
+      );
       throw new AppError('Invalid webhook signature', 403);
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    logger.error(
+      {
+        error: error.message,
+        receivedSignatureLength: receivedSignature.length,
+      },
+      'Error during signature verification',
+    );
     throw new AppError('Invalid webhook signature', 403);
   }
 };
