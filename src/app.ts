@@ -25,6 +25,7 @@ import saleRoutes from './routes/sale.routes.js';
 import listingRoutes from './routes/listing.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import verificationRoutes from './routes/verification.routes.js';
 import { chapaWebhookHandler } from './controllers/payment.controller.js';
 
 const app: Express = express();
@@ -50,7 +51,7 @@ app.use(
   }),
 );
 
-app.use(cookieParser());
+app.use(cookieParser(config.jwt.secret)); // Use JWT secret for signed cookies
 
 const limiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -86,6 +87,7 @@ app.use('/api/v1/listings/sale', saleRoutes);
 app.use('/api/v1/listings', listingRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/verification', verificationRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({

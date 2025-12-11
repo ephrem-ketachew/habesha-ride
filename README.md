@@ -133,6 +133,103 @@ The platform supports both traditional email/password authentication and Google 
 
 ---
 
+## 🛡️ Kech.ai Verification Standard
+
+**Version:** 1.0  
+**Date:** December 11, 2025  
+**Module:** Identity & Security  
+**Status:** Approved Architecture
+
+### 1. Overview
+
+This document defines the "Pragmatic Security Stack" for the Kech car rental platform. It balances user experience with rigorous security by layering Digital Identity (Fayda/Passport), Digital Capability (License OCR), and Physical Verification (Handover).
+
+**Core Philosophy:** "Trust but Verify." The digital system approves the booking contract, but the human agent approves the physical asset release.
+
+### 2. The User State (Pre-Booking)
+
+**Objective:** Eliminate friction during initial onboarding to maximize user acquisition.
+
+**Sign Up Methods:** Google, Apple, or Email.
+
+**Account Status:** Created (Unverified).
+
+**User Capabilities:**
+
+- ✅ Browse vehicle inventory.
+- ✅ View pricing and availability.
+- ✅ Save favorites.
+- ❌ Cannot make a booking request.
+
+### 3. The Verification Trigger (At Booking)
+
+**Trigger Point:** When the user clicks "Book Now".
+
+**System Action:** Intercept request and prompt: "To continue, we need to verify your identity and driving license."
+
+The user must select their status to determine the verification path:
+
+#### 🔹 Path A: The Resident Flow (Fayda + License)
+
+**Target:** Ethiopian Citizens & Residents
+
+**Step 1: Identity (Fayda OIDC)**
+
+- **Action:** User clicks "Verify with Fayda".
+- **Flow:** Redirect to NIDP login ➝ User Consents ➝ Return to App.
+- **Data Capture:** Verified Name, Date of Birth (DOB), and Photo directly from the Government database.
+- **Status:** Identity Verified.
+
+**Step 2: Eligibility (License OCR)**
+
+- **Action:** User uploads front/back of Ethiopian Driver's License.
+- **System Check:**
+  - Name Match: Fuzzy match OCR Name vs. Fayda Name.
+  - DOB Match: Exact match OCR DOB vs. Fayda DOB.
+- **Result:** If Match = APPROVED.
+
+#### 🔹 Path B: The Visitor Flow (Passport + License)
+
+**Target:** Tourists & Foreign Visitors
+
+**Step 1: Identity (Passport OCR)**
+
+- **Action:** User uploads Passport photo page.
+- **System Check:** Google Vision API reads the MRZ (Machine Readable Zone) code and validates the checksum format.
+- **Data Capture:** Name, DOB, Passport Number, Nationality.
+- **Status:** Identity Verified.
+
+**Step 2: Eligibility (International License)**
+
+- **Action:** User uploads International Driver's Permit (IDP) or valid Home Country License.
+- **System Check:** Name matching against Passport data.
+- **Result:** If Match = APPROVED.
+
+### 4. The Physical Safeguard (The Handover)
+
+**Role:** The "Human Firewall."
+
+**Context:** Digital verification prevents remote fraud; physical verification prevents theft by the actual driver.
+
+**The Workflow:**
+
+- **Scene:** User arrives at the vehicle location.
+- **Tool:** Agent/Owner opens the "Handover Checklist" in the Kech Agent App.
+- **Mandatory Checks:**
+  - [ ] Inspect License: Verify the physical card's security features (holograms, texture) to ensure it is not a photocopy or low-quality forgery.
+  - [ ] Face Check: Visually confirm the person present matches the Fayda/Passport photo displayed on the Agent's screen (sourced from the secure backend).
+- **Action:** Agent swipes "Release Car".
+- **Result:** The digital contract is generated, timestamped, and embedded with the verified ID numbers.
+
+### 5. Strategic Advantages
+
+- **Frictionless Entry:** High conversion rate at signup (0% drop-off).
+- **Cost Efficiency:** Verification costs (OCR/Fayda API calls) are incurred only when a user signals intent to pay.
+- **Theft Deterrence:** A thief cannot bypass Path A without stealing a verified Fayda digital identity AND forging a matching physical license.
+- **Digital Paper Trail:** In the event of theft, the platform can immediately provide Federal Police with government-verified data (Fayda ID or Passport Number), ensuring rapid legal action.
+
+---
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:

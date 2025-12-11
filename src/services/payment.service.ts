@@ -21,7 +21,6 @@ import {
 import * as paymentEmailService from '../utils/paymentEmail.util.js';
 
 export const initializePayment = async (bookingId: string, userId: string) => {
-  console.log('INITIALIZING PAYMENT FOR BOOKING:', bookingId);
   const booking = await Booking.findById(bookingId)
     .populate('renter')
     .populate('listing');

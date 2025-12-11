@@ -52,6 +52,16 @@ interface PaymentConfig {
   webhookUrl: string;
 }
 
+interface FaydaConfig {
+  clientId: string;
+  authorizationEndpoint: string;
+  tokenEndpoint: string;
+  userinfoEndpoint: string;
+  redirectUri: string;
+  privateKeyBase64: string;
+  claimsLocales: string;
+}
+
 export interface AppConfig {
   nodeEnv: 'development' | 'production' | 'test';
   isProduction: boolean;
@@ -71,4 +81,5 @@ export interface AppConfig {
   superAdmin: SuperAdminConfig;
   chapa: ChapaConfig;
   payment: PaymentConfig;
+  fayda: FaydaConfig;
 }

@@ -124,6 +124,16 @@ const config: AppConfig = {
     returnUrl: `${getEnvVar('CLIENT_URL', true)}${getEnvVar('PAYMENT_RETURN_PATH', false, '/bookings')}`,
     webhookUrl: `${getEnvVar('BASE_URL', false, 'http://localhost:3000')}${getEnvVar('PAYMENT_WEBHOOK_PATH', false, '/api/v1/payments/webhook')}`,
   },
+
+  fayda: {
+    clientId: getEnvVar('FAYDA_CLIENT_ID', true)!,
+    authorizationEndpoint: getEnvVar('FAYDA_AUTHORIZATION_ENDPOINT', true)!,
+    tokenEndpoint: getEnvVar('FAYDA_TOKEN_ENDPOINT', true)!,
+    userinfoEndpoint: getEnvVar('FAYDA_USERINFO_ENDPOINT', true)!,
+    redirectUri: getEnvVar('FAYDA_REDIRECT_URI', true)!,
+    privateKeyBase64: getEnvVar('FAYDA_PRIVATE_KEY_BASE64', true)!,
+    claimsLocales: getEnvVar('FAYDA_CLAIMS_LOCALES', false, 'en am')!,
+  },
 };
 
 export default isProduction ? Object.freeze(config) : config;

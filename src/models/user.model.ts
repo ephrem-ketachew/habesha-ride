@@ -200,6 +200,66 @@ const userSchema = new Schema<IUserDocument>(
       type: Date,
       select: false,
     },
+
+    faydaId: {
+      type: String,
+      sparse: true,
+    },
+    isIdentityVerified: {
+      type: Boolean,
+      default: false,
+    },
+    identityVerifiedAt: {
+      type: Date,
+    },
+    identityVerificationMethod: {
+      type: String,
+      enum: {
+        values: ['fayda', 'passport', null],
+        message:
+          'Identity verification method is either: fayda, passport, or null',
+      },
+      default: null,
+    },
+
+    faydaData: {
+      sub: {
+        type: String,
+        required: true,
+      },
+      name: {
+        type: String,
+      },
+      nameEn: {
+        type: String,
+      },
+      nameAm: {
+        type: String,
+      },
+      birthdate: {
+        type: String,
+      },
+      picture: {
+        type: String,
+      },
+      gender: {
+        type: String,
+      },
+      address: {
+        type: String,
+      },
+      phone_number: {
+        type: String,
+      },
+      email: {
+        type: String,
+      },
+      verifiedAt: {
+        type: Date,
+        required: true,
+        default: Date.now,
+      },
+    },
   },
   {
     timestamps: true,
@@ -216,6 +276,10 @@ userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 userSchema.index({ firstName: 1, lastName: 1 });
 
 userSchema.index({ role: 1, status: 1 });
+
+userSchema.index({ faydaId: 1 }, { unique: true, sparse: true });
+userSchema.index({ isIdentityVerified: 1 });
+userSchema.index({ identityVerifiedAt: 1 });
 
 userSchema.index({
   firstName: 'text',
