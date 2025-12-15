@@ -155,7 +155,7 @@ export const updateCarSchema = z
       .optional(),
     mileage: z.coerce.number().min(0, 'Mileage cannot be negative').optional(),
     condition: conditionEnum.optional(),
-    accidentHistory: z.boolean().optional(),
+    accidentHistory: z.coerce.boolean().optional(),
     features: z
       .union([
         z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
