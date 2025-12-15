@@ -21,7 +21,7 @@ router.use(protect);
  *   post:
  *     summary: Create a new booking
  *     tags: [Bookings]
- *     description: Create a new booking for a rental listing. The booking will be automatically confirmed if the listing has instant booking enabled, otherwise it will be pending owner approval. Requires authentication.
+ *     description: Create a new booking for a rental listing. If instant booking is enabled, the booking is confirmed and payment can be initiated immediately. Otherwise, the booking is pending owner approval and payment can only be initiated after the owner confirms the booking. Requires authentication.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -56,7 +56,7 @@ router.use(protect);
  *                 example: true
  *     responses:
  *       201:
- *         description: Booking created successfully. Payment is required to confirm.
+ *         description: Booking created successfully. For instant bookings, payment can be initiated immediately. For non-instant bookings, owner approval is required before payment.
  *         content:
  *           application/json:
  *             schema:
@@ -72,16 +72,19 @@ router.use(protect);
  *                       $ref: '#/components/schemas/Booking'
  *                     requiresPayment:
  *                       type: boolean
+ *                       description: Whether payment can be initiated (true for instant bookings, false for pending bookings)
  *                       example: true
  *                     paymentAmount:
  *                       type: number
+ *                       description: Payment amount (only set if requiresPayment is true)
  *                       example: 12500.50
  *                     nextStep:
  *                       type: string
+ *                       description: Next step for the user - 'initialize_payment' for instant bookings, 'wait_for_owner_approval' for pending bookings
  *                       example: initialize_payment
  *                     message:
  *                       type: string
- *                       example: Booking created successfully. Please proceed with payment to confirm your reservation.
+ *                       example: Booking created and confirmed. Please proceed with payment to complete your reservation.
  *       400:
  *         description: Bad request - validation error, dates in past, endDate before startDate, self-booking attempt, or delivery not available
  *       401:

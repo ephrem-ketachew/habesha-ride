@@ -375,7 +375,8 @@ All endpoints require authentication via JWT cookie.
 
 5. Create Booking
    ├─ Status: confirmed (if instantBooking) else pending
-   └─ Payment status: pending
+   ├─ Payment status: pending
+   └─ Payment allowed: only if status is confirmed (instant bookings can pay immediately, others must wait for owner approval)
 ```
 
 ### Status Transition Workflow

@@ -173,13 +173,18 @@ export const createBooking = async (
     paymentStatus: 'pending',
   });
 
+  const isInstantBooking = listing.instantBookingAvailable;
+
   return {
     booking,
-    requiresPayment: true,
-    paymentAmount: totalPrice + listing.securityDeposit,
-    nextStep: 'initialize_payment',
-    message:
-      'Booking created successfully. Please proceed with payment to confirm your reservation.',
+    requiresPayment: isInstantBooking,
+    paymentAmount: isInstantBooking ? totalPrice + listing.securityDeposit : 0,
+    nextStep: isInstantBooking
+      ? 'initialize_payment'
+      : 'wait_for_owner_approval',
+    message: isInstantBooking
+      ? 'Booking created and confirmed. Please proceed with payment to complete your reservation.'
+      : 'Booking request created successfully. Please wait for owner approval before proceeding with payment.',
   };
 };
 
