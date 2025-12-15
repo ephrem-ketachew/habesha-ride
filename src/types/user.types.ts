@@ -38,7 +38,7 @@ export interface IUser {
   identityVerificationMethod?: 'fayda' | 'passport' | null;
 
   faydaData?: {
-    sub: string;
+    sub?: string;
     name?: string;
     nameEn?: string;
     nameAm?: string;
@@ -48,7 +48,7 @@ export interface IUser {
     address?: string;
     phone_number?: string;
     email?: string;
-    verifiedAt: Date;
+    verifiedAt?: Date;
   };
 }
 

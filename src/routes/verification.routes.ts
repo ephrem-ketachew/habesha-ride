@@ -94,17 +94,7 @@ router.post('/fayda/initiate', protect, initiateFaydaVerificationHandler);
  *                   type: object
  *                   properties:
  *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: string
- *                         isIdentityVerified:
- *                           type: boolean
- *                         identityVerificationMethod:
- *                           type: string
- *                           example: fayda
- *                         faydaData:
- *                           type: object
+ *                       $ref: '#/components/schemas/UserVerificationData'
  *                     message:
  *                       type: string
  *                       example: Identity verified successfully
@@ -143,24 +133,7 @@ router.post(
  *                   type: string
  *                   example: success
  *                 data:
- *                   type: object
- *                   properties:
- *                     isIdentityVerified:
- *                       type: boolean
- *                     identityVerificationMethod:
- *                       type: string
- *                       nullable: true
- *                       example: fayda
- *                     identityVerifiedAt:
- *                       type: string
- *                       format: date-time
- *                       nullable: true
- *                     faydaId:
- *                       type: string
- *                       nullable: true
- *                     faydaData:
- *                       type: object
- *                       nullable: true
+ *                   $ref: '#/components/schemas/VerificationStatus'
  *       401:
  *         description: Not authenticated
  */
