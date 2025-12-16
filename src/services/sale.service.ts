@@ -7,6 +7,7 @@ import {
   GetSaleListingsQuery,
 } from '../validation/sale.validation.js';
 import { GetListingsAdminQuery } from '../validation/admin.validation.js';
+import mongoose from 'mongoose';
 
 export const createSaleListing = async (
   userId: string,
@@ -69,10 +70,18 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
 
   if (minPrice !== undefined || maxPrice !== undefined) {
     const priceFilter: any = {};
-    if (minPrice !== undefined && minPrice !== null && !isNaN(Number(minPrice))) {
+    if (
+      minPrice !== undefined &&
+      minPrice !== null &&
+      !isNaN(Number(minPrice))
+    ) {
       priceFilter.$gte = Number(minPrice);
     }
-    if (maxPrice !== undefined && maxPrice !== null && !isNaN(Number(maxPrice))) {
+    if (
+      maxPrice !== undefined &&
+      maxPrice !== null &&
+      !isNaN(Number(maxPrice))
+    ) {
       priceFilter.$lte = Number(maxPrice);
     }
     if (Object.keys(priceFilter).length > 0) {
