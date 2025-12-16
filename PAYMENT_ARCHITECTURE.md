@@ -227,12 +227,8 @@ flowchart TD
   V5 -->|"Find Transaction"| V51[ ]
   V5 -->|"Verify with Chapa"| V52[ ]
   V5 -->|"Update Status"| V53[ ]
-  V5 --> V6(Update Booking)
-  V6 --> V7{"Auto-confirm?"}
-  V7 -- Yes --> V8(Auto-Confirm)
-  V7 -- No --> V9[ ]
-  V8 --> V10(Send Email Notification)
-  V9 --> V10
+  V5 --> V6(Update Booking Payment Status)
+  V6 --> V10(Send Email Notification)
 ```
 
 **Asynchronous Verification (Webhook):**
@@ -268,12 +264,14 @@ stateDiagram-v2
 
 **State Synchronization Rules**:
 
-| Booking Status | Payment Status | Action After Payment                                                                               |
-| -------------- | -------------- | -------------------------------------------------------------------------------------------------- |
-| `pending`      | `pending`      | If instant booking: auto-confirm to `confirmed`<br>If manual approval: wait for owner confirmation |
-| `confirmed`    | `pending`      | Update `paymentStatus` to `paid`                                                                   |
-| `active`       | `paid`         | No action (already in progress)                                                                    |
-| `cancelled`    | `paid`         | Create refund transaction                                                                          |
+| Booking Status | Payment Status | Payment Allowed | Action After Payment                                                                               |
+| -------------- | -------------- | --------------- | -------------------------------------------------------------------------------------------------- |
+| `pending`      | `pending`      | ❌ No           | Payment cannot be initiated. Must wait for owner approval.                                         |
+| `confirmed`    | `pending`      | ✅ Yes          | Update `paymentStatus` to `paid`                                                                   |
+| `active`       | `paid`         | ❌ No           | No action (already in progress)                                                                    |
+| `cancelled`    | `paid`         | ❌ No           | Create refund transaction                                                                          |
+
+**Note**: Payment can only be initialized for bookings with status `confirmed`. For instant bookings, the booking is created as `confirmed` immediately. For non-instant bookings, the owner must approve (change status from `pending` to `confirmed`) before payment can be initiated.
 
 ---
 

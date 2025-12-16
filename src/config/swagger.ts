@@ -75,6 +75,11 @@ const swaggerDefinition = {
       name: 'Admin',
       description: 'Admin endpoints for platform management',
     },
+    {
+      name: 'Verification',
+      description:
+        'Identity verification endpoints (Fayda eSignet integration)',
+    },
   ],
 };
 

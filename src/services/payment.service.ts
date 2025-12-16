@@ -21,7 +21,6 @@ import {
 import * as paymentEmailService from '../utils/paymentEmail.util.js';
 
 export const initializePayment = async (bookingId: string, userId: string) => {
-  console.log('INITIALIZING PAYMENT FOR BOOKING:', bookingId);
   const booking = await Booking.findById(bookingId)
     .populate('renter')
     .populate('listing');
@@ -39,9 +38,9 @@ export const initializePayment = async (bookingId: string, userId: string) => {
     throw new AppError('Booking already paid', 400);
   }
 
-  if (!['pending', 'confirmed'].includes(booking.status)) {
+  if (booking.status !== 'confirmed') {
     throw new AppError(
-      `Cannot initialize payment for booking with status: ${booking.status}`,
+      `Cannot initialize payment for booking with status: ${booking.status}. Booking must be confirmed by the owner before payment.`,
       400,
     );
   }
@@ -210,8 +209,6 @@ export const verifyPayment = async (tx_ref: string, userId: string) => {
       'Booking payment status updated to paid',
     );
 
-    await autoConfirmBookingIfApplicable(String(booking._id));
-
     const user = await User.findById(transaction.user);
     if (user) {
       await paymentEmailService.sendPaymentConfirmationEmail(
@@ -354,8 +351,6 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
   }
 
   if (status === 'success') {
-    await autoConfirmBookingIfApplicable(transaction.booking.toString());
-
     await paymentEmailService.sendPaymentConfirmationEmail(
       updated,
       booking,
@@ -366,27 +361,6 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
   }
 
   return updated;
-};
-
-const autoConfirmBookingIfApplicable = async (bookingId: string) => {
-  const booking = await Booking.findById(bookingId).populate('listing');
-
-  if (!booking) {
-    logger.warn({ bookingId }, 'Booking not found for auto-confirmation');
-    return;
-  }
-
-  const listing = booking.listing as any;
-
-  if (listing.instantBookingAvailable && booking.status === 'pending') {
-    booking.status = 'confirmed';
-    await booking.save();
-
-    logger.info(
-      { bookingId },
-      'Booking auto-confirmed after successful payment',
-    );
-  }
 };
 
 export const createRefundTransaction = async (

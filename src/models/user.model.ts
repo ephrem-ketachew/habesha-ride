@@ -59,6 +59,28 @@
  *         googleId:
  *           type: string
  *           description: Google OAuth ID
+ *         faydaId:
+ *           type: string
+ *           description: Fayda (eSignet) subject identifier (unique national ID)
+ *           example: fayda_sub_identifier_12345
+ *         isIdentityVerified:
+ *           type: boolean
+ *           default: false
+ *           description: Identity verification status (via Fayda or passport)
+ *         identityVerifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when identity was verified
+ *           example: "2025-12-11T10:30:00.000Z"
+ *         identityVerificationMethod:
+ *           type: string
+ *           enum: [fayda, passport, null]
+ *           nullable: true
+ *           default: null
+ *           description: Method used for identity verification
+ *         faydaData:
+ *           $ref: '#/components/schemas/FaydaData'
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -67,6 +89,112 @@
  *           type: string
  *           format: date-time
  *           description: Last update timestamp
+ *     FaydaData:
+ *       type: object
+ *       description: User data retrieved from Fayda (eSignet) identity verification
+ *       properties:
+ *         sub:
+ *           type: string
+ *           nullable: true
+ *           description: Fayda subject identifier (unique)
+ *           example: fayda_sub_identifier_12345
+ *         name:
+ *           type: string
+ *           description: Full name (single language or default)
+ *           example: John Doe
+ *         nameEn:
+ *           type: string
+ *           description: English name (if multi-language claims requested)
+ *           example: John Doe
+ *         nameAm:
+ *           type: string
+ *           description: Amharic name (if multi-language claims requested)
+ *           example: ጆን ዶይ
+ *         birthdate:
+ *           type: string
+ *           format: date
+ *           description: Date of birth (YYYY-MM-DD)
+ *           example: "1990-01-01"
+ *         picture:
+ *           type: string
+ *           format: uri
+ *           description: Profile photo URL from Fayda
+ *           example: https://fayda.gov.et/profile/photo.jpg
+ *         gender:
+ *           type: string
+ *           description: Gender
+ *           example: male
+ *         address:
+ *           type: string
+ *           description: Address
+ *           example: Addis Ababa, Ethiopia
+ *         phone_number:
+ *           type: string
+ *           description: Phone number from Fayda
+ *           example: "+251911234567"
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Email from Fayda (if available)
+ *           example: john.doe@example.com
+ *         verifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when data was verified from Fayda
+ *           example: "2025-12-11T10:30:00.000Z"
+ *     UserVerificationData:
+ *       type: object
+ *       description: User identity verification data returned by verification endpoints
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: User ID
+ *           example: 507f1f77bcf86cd799439011
+ *         isIdentityVerified:
+ *           type: boolean
+ *           description: Identity verification status
+ *         identityVerificationMethod:
+ *           type: string
+ *           enum: [fayda, passport, null]
+ *           nullable: true
+ *           description: Method used for identity verification
+ *         identityVerifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when identity was verified
+ *         faydaId:
+ *           type: string
+ *           nullable: true
+ *           description: Fayda subject identifier
+ *         faydaData:
+ *           $ref: '#/components/schemas/FaydaData'
+ *     VerificationStatus:
+ *       type: object
+ *       description: Current identity verification status for a user
+ *       properties:
+ *         isIdentityVerified:
+ *           type: boolean
+ *           description: Whether the user's identity is verified
+ *         identityVerificationMethod:
+ *           type: string
+ *           enum: [fayda, passport, null]
+ *           nullable: true
+ *           description: Method used for identity verification
+ *         identityVerifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when identity was verified
+ *         faydaId:
+ *           type: string
+ *           nullable: true
+ *           description: Fayda subject identifier (if verified via Fayda)
+ *         faydaData:
+ *           $ref: '#/components/schemas/FaydaData'
+ *           nullable: true
+ *           description: Fayda user data (if verified via Fayda)
  */
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
@@ -200,6 +328,64 @@ const userSchema = new Schema<IUserDocument>(
       type: Date,
       select: false,
     },
+
+    faydaId: {
+      type: String,
+      sparse: true,
+    },
+    isIdentityVerified: {
+      type: Boolean,
+      default: false,
+    },
+    identityVerifiedAt: {
+      type: Date,
+    },
+    identityVerificationMethod: {
+      type: String,
+      enum: {
+        values: ['fayda', 'passport', null],
+        message:
+          'Identity verification method is either: fayda, passport, or null',
+      },
+      default: null,
+    },
+
+    faydaData: {
+      sub: {
+        type: String,
+      },
+      name: {
+        type: String,
+      },
+      nameEn: {
+        type: String,
+      },
+      nameAm: {
+        type: String,
+      },
+      birthdate: {
+        type: String,
+      },
+      picture: {
+        type: String,
+      },
+      gender: {
+        type: String,
+      },
+      address: {
+        type: String,
+      },
+      phone_number: {
+        type: String,
+      },
+      email: {
+        type: String,
+      },
+      verifiedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
   },
   {
     timestamps: true,
@@ -216,6 +402,10 @@ userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 userSchema.index({ firstName: 1, lastName: 1 });
 
 userSchema.index({ role: 1, status: 1 });
+
+userSchema.index({ faydaId: 1 }, { unique: true, sparse: true });
+userSchema.index({ isIdentityVerified: 1 });
+userSchema.index({ identityVerifiedAt: 1 });
 
 userSchema.index({
   firstName: 'text',

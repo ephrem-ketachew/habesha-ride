@@ -30,6 +30,26 @@ export interface IUser {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   googleId?: string;
+
+  // Identity Verification Fields
+  faydaId?: string;
+  isIdentityVerified: boolean;
+  identityVerifiedAt?: Date;
+  identityVerificationMethod?: 'fayda' | 'passport' | null;
+
+  faydaData?: {
+    sub?: string;
+    name?: string;
+    nameEn?: string;
+    nameAm?: string;
+    birthdate?: string;
+    picture?: string;
+    gender?: string;
+    address?: string;
+    phone_number?: string;
+    email?: string;
+    verifiedAt?: Date;
+  };
 }
 
 export interface PublicUserProfile {

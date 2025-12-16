@@ -31,6 +31,7 @@ const router = Router();
  *   post:
  *     summary: Initialize payment for a booking
  *     tags: [Payments]
+ *     description: Initialize payment for a confirmed booking. The booking must be in 'confirmed' status (owner-approved for non-instant bookings, or automatically confirmed for instant bookings). Payment cannot be initiated for pending bookings.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -44,12 +45,12 @@ const router = Router();
  *             properties:
  *               bookingId:
  *                 type: string
- *                 description: Booking ID to pay for
+ *                 description: Booking ID to pay for (must be in 'confirmed' status)
  *     responses:
  *       200:
  *         description: Payment initialized successfully
  *       400:
- *         description: Bad request (booking already paid, invalid status)
+ *         description: Bad request (booking already paid, booking not confirmed, or invalid status)
  *       401:
  *         description: Unauthorized
  *       403:
