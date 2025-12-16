@@ -57,8 +57,17 @@ export const getMySaleListings = async (userId: string) => {
 };
 
 export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
-  const { minPrice, maxPrice, page, limit, city, make, transmission, search } =
-    query;
+  const {
+    minPrice,
+    maxPrice,
+    page,
+    limit,
+    city,
+    make,
+    transmission,
+    search,
+    isFeatured,
+  } = query;
 
   const pageNum = page ? Number(page) : 1;
   const limitNum = limit ? Number(limit) : 20;
@@ -67,6 +76,10 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
   const matchStage: any = {
     status: 'available',
   };
+
+  if (isFeatured !== undefined) {
+    matchStage.isFeatured = isFeatured;
+  }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
     const priceFilter: any = {};

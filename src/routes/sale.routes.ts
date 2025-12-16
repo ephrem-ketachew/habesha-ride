@@ -81,6 +81,12 @@ const router = Router();
  *           type: string
  *         description: Text search against car make name, model name, or city name (case-insensitive). All filters work in combination (AND logic).
  *         example: "Toyota"
+ *       - in: query
+ *         name: isFeatured
+ *         schema:
+ *           type: boolean
+ *         description: Filter by featured status. All filters work in combination (AND logic).
+ *         example: true
  *     responses:
  *       200:
  *         description: Successfully retrieved sale listings with pagination metadata

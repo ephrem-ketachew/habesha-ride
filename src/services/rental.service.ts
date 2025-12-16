@@ -76,6 +76,7 @@ export const getPublicRentalListings = async (
     deliveryAvailable,
     features,
     search,
+    isFeatured,
   } = query;
 
   const pageNum = page ? Number(page) : 1;
@@ -89,6 +90,10 @@ export const getPublicRentalListings = async (
 
   if (deliveryAvailable !== undefined) {
     matchStage.deliveryAvailable = deliveryAvailable;
+  }
+
+  if (isFeatured !== undefined) {
+    matchStage.isFeatured = isFeatured;
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {

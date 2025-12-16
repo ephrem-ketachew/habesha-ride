@@ -37,6 +37,7 @@ export const getSaleListingsQuerySchema = z.object({
   maxPrice: z.coerce.number().optional(),
   city: z.string().optional(),
   search: z.string().optional(),
+  isFeatured: z.coerce.boolean().optional(),
   page: z.coerce.number().min(1).optional().default(1),
   limit: z.coerce.number().min(1).max(100).optional().default(20),
 });
