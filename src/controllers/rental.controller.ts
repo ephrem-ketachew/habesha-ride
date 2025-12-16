@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import catchAsync from '../utils/catchAsync.util.js';
 import * as rentalService from '../services/rental.service.js';
+import * as bookingService from '../services/booking.service.js';
 import {
   CreateRentalListingInput,
   UpdateRentalListingInput,
   GetRentalListingsQuery,
+  CheckAvailabilityQuery,
 } from '../validation/rental.validation.js';
 
 export const createRentalListingHandler = catchAsync(
@@ -56,6 +58,24 @@ export const getRentalListingDetailsHandler = catchAsync(
     res.status(200).json({
       status: 'success',
       data: { listing },
+    });
+  },
+);
+
+export const checkAvailabilityHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query as unknown as CheckAvailabilityQuery;
+
+    const availability = await bookingService.checkAvailabilityWithDetails(
+      id,
+      startDate,
+      endDate,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: availability,
     });
   },
 );

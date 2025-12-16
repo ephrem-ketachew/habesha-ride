@@ -7,17 +7,19 @@ const objectIdSchema = z
     message: 'Invalid ID format.',
   });
 
-const unavailableRangeSchema = z.object({
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-  reason: z.enum(['booking', 'manual_block']).optional().default('manual_block'),
-}).refine(
-  (data) => data.endDate.getTime() >= data.startDate.getTime(),
-  {
+const unavailableRangeSchema = z
+  .object({
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
+    reason: z
+      .enum(['booking', 'manual_block'])
+      .optional()
+      .default('manual_block'),
+  })
+  .refine((data) => data.endDate.getTime() >= data.startDate.getTime(), {
     message: 'End date must be greater than or equal to start date.',
     path: ['endDate'],
-  },
-);
+  });
 
 export const createRentalListingSchema = z
   .object({
@@ -25,8 +27,18 @@ export const createRentalListingSchema = z
     ratePerDay: z.coerce.number().min(0, 'Rate cannot be negative'),
     ratePerHour: z.coerce.number().min(0).optional(),
     securityDeposit: z.coerce.number().min(0).optional().default(0),
-    weeklyDiscountPercent: z.coerce.number().min(0).max(99).optional().default(0),
-    monthlyDiscountPercent: z.coerce.number().min(0).max(99).optional().default(0),
+    weeklyDiscountPercent: z.coerce
+      .number()
+      .min(0)
+      .max(99)
+      .optional()
+      .default(0),
+    monthlyDiscountPercent: z.coerce
+      .number()
+      .min(0)
+      .max(99)
+      .optional()
+      .default(0),
     allowedMileagePerDay: z.coerce.number().min(0).nullable().optional(),
     excessMileageFee: z.coerce.number().min(0).optional().default(0),
     advanceNoticeHours: z.coerce.number().min(0).optional().default(12),
@@ -35,7 +47,10 @@ export const createRentalListingSchema = z
     minRentalDurationDays: z.coerce.number().min(1).optional().default(1),
     maxRentalDurationDays: z.coerce.number().max(365).optional().default(90),
     instantBookingAvailable: z.coerce.boolean().optional().default(false),
-    cancellationPolicy: z.enum(['flexible', 'moderate', 'strict']).optional().default('moderate'),
+    cancellationPolicy: z
+      .enum(['flexible', 'moderate', 'strict'])
+      .optional()
+      .default('moderate'),
     listingDescription: z
       .string()
       .min(10, 'Description is too short')
@@ -57,12 +72,15 @@ export const createRentalListingSchema = z
   .refine(
     (data) => {
       if (data.allowedMileagePerDay != null && data.allowedMileagePerDay > 0) {
-        return data.excessMileageFee !== undefined && data.excessMileageFee >= 0;
+        return (
+          data.excessMileageFee !== undefined && data.excessMileageFee >= 0
+        );
       }
       return true;
     },
     {
-      message: 'Excess mileage fee is required when allowed mileage per day is set.',
+      message:
+        'Excess mileage fee is required when allowed mileage per day is set.',
       path: ['excessMileageFee'],
     },
   )
@@ -118,12 +136,15 @@ export const updateRentalListingSchema = z
   .refine(
     (data) => {
       if (data.allowedMileagePerDay != null && data.allowedMileagePerDay > 0) {
-        return data.excessMileageFee !== undefined && data.excessMileageFee >= 0;
+        return (
+          data.excessMileageFee !== undefined && data.excessMileageFee >= 0
+        );
       }
       return true;
     },
     {
-      message: 'Excess mileage fee is required when allowed mileage per day is set.',
+      message:
+        'Excess mileage fee is required when allowed mileage per day is set.',
       path: ['excessMileageFee'],
     },
   )
@@ -246,3 +267,17 @@ export type GetRentalListingsQuery = z.infer<
 export const getRentalListingIdSchema = z.object({
   id: objectIdSchema,
 });
+
+export const checkAvailabilityQuerySchema = z
+  .object({
+    startDate: z.coerce.date().describe('Start date'),
+    endDate: z.coerce.date().describe('End date'),
+  })
+  .refine((data) => data.endDate.getTime() > data.startDate.getTime(), {
+    message: 'End date must be after start date',
+    path: ['endDate'],
+  });
+
+export type CheckAvailabilityQuery = z.infer<
+  typeof checkAvailabilityQuerySchema
+>;

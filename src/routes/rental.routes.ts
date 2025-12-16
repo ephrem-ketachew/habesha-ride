@@ -7,6 +7,7 @@ import {
   updateRentalListingSchema,
   getRentalListingsQuerySchema,
   getRentalListingIdSchema,
+  checkAvailabilityQuerySchema,
 } from '../validation/rental.validation.js';
 
 const router = Router();
@@ -171,6 +172,92 @@ router.get(
   '/',
   validate(getRentalListingsQuerySchema, 'query'),
   rentalController.getPublicRentalListingsHandler,
+);
+
+/**
+ * @swagger
+ * /listings/rent/{id}/check-availability:
+ *   get:
+ *     summary: Check availability for a rental listing
+ *     tags: [Rentals]
+ *     description: Check if a rental listing is available for the specified date range. Returns availability status and any conflicting dates (unavailable ranges or existing bookings). This endpoint is public and does not require authentication.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Rental listing ID - must be a valid MongoDB ObjectId
+ *         example: 507f1f77bcf86cd799439011
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Start date and time for the booking (ISO 8601 format)
+ *         example: "2024-02-01T10:00:00Z"
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: End date and time for the booking (ISO 8601 format). Must be after startDate.
+ *         example: "2024-02-05T18:00:00Z"
+ *     responses:
+ *       200:
+ *         description: Availability check completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     isAvailable:
+ *                       type: boolean
+ *                       description: Whether the listing is available for the specified date range
+ *                       example: false
+ *                     conflictingDates:
+ *                       type: array
+ *                       description: Array of conflicting date ranges (empty if available)
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           startDate:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Start date of the conflict
+ *                             example: "2024-02-03T00:00:00Z"
+ *                           endDate:
+ *                             type: string
+ *                             format: date-time
+ *                             description: End date of the conflict
+ *                             example: "2024-02-04T23:59:59Z"
+ *                           reason:
+ *                             type: string
+ *                             enum: [unavailable_range, booking]
+ *                             description: Reason for the conflict
+ *                             example: "booking"
+ *                           type:
+ *                             type: string
+ *                             description: Additional type information (only for unavailable_range)
+ *                             example: "manual_block"
+ *       400:
+ *         description: Bad request - invalid ID format, missing dates, or endDate before startDate
+ *       404:
+ *         description: Rental listing not found
+ */
+router.get(
+  '/:id/check-availability',
+  validate(getRentalListingIdSchema, 'params'),
+  validate(checkAvailabilityQuerySchema, 'query'),
+  rentalController.checkAvailabilityHandler,
 );
 
 /**

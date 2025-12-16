@@ -52,6 +52,61 @@ export const checkAvailability = async (
   return !overlappingBooking;
 };
 
+export const checkAvailabilityWithDetails = async (
+  listingId: string,
+  startDate: Date,
+  endDate: Date,
+) => {
+  const listing = await RentalListing.findById(listingId);
+  if (!listing) throw new AppError('Listing not found', 404);
+
+  const conflictingDates: Array<{
+    startDate: Date;
+    endDate: Date;
+    reason: 'unavailable_range' | 'booking';
+    type?: string;
+  }> = [];
+
+  // Check unavailable ranges
+  listing.unavailableRanges.forEach((range) => {
+    const rangeStart = new Date(range.startDate);
+    const rangeEnd = new Date(range.endDate);
+    if (startDate < rangeEnd && endDate > rangeStart) {
+      conflictingDates.push({
+        startDate: rangeStart,
+        endDate: rangeEnd,
+        reason: 'unavailable_range',
+        type: range.reason || 'manual_block',
+      });
+    }
+  });
+
+  // Check overlapping bookings
+  const overlappingBookings = await Booking.find({
+    listing: listingId,
+    status: {
+      $in: ['pending', 'confirmed', 'active'],
+    },
+    startDate: { $lt: endDate },
+    endDate: { $gt: startDate },
+  }).select('startDate endDate status');
+
+  overlappingBookings.forEach((booking) => {
+    conflictingDates.push({
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      reason: 'booking',
+    });
+  });
+
+  const isAvailable = conflictingDates.length === 0;
+
+  return {
+    isAvailable,
+    conflictingDates,
+  };
+};
+
 export const createBooking = async (
   renterId: string,
   input: CreateBookingInput & { deliveryRequested?: boolean },
