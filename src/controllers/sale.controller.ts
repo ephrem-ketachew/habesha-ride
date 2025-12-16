@@ -38,7 +38,7 @@ export const getMySaleListingsHandler = catchAsync(
 
 export const getPublicSaleListingsHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const query = req.query as unknown as GetSaleListingsQuery;
+    const query = (req.validatedQuery || req.query) as unknown as GetSaleListingsQuery;
     const data = await saleService.getPublicSaleListings(query);
 
     res.status(200).json({

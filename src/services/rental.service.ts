@@ -75,6 +75,7 @@ export const getPublicRentalListings = async (
     maxYear,
     deliveryAvailable,
     features,
+    search,
   } = query;
 
   const pageNum = page ? Number(page) : 1;
@@ -91,9 +92,24 @@ export const getPublicRentalListings = async (
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
-    matchStage.ratePerDay = {};
-    if (minPrice !== undefined) matchStage.ratePerDay.$gte = minPrice;
-    if (maxPrice !== undefined) matchStage.ratePerDay.$lte = maxPrice;
+    const priceFilter: any = {};
+    if (
+      minPrice !== undefined &&
+      minPrice !== null &&
+      !isNaN(Number(minPrice))
+    ) {
+      priceFilter.$gte = Number(minPrice);
+    }
+    if (
+      maxPrice !== undefined &&
+      maxPrice !== null &&
+      !isNaN(Number(maxPrice))
+    ) {
+      priceFilter.$lte = Number(maxPrice);
+    }
+    if (Object.keys(priceFilter).length > 0) {
+      matchStage.ratePerDay = priceFilter;
+    }
   }
 
   const pipeline: any[] = [
@@ -224,6 +240,19 @@ export const getPublicRentalListings = async (
     },
     { $unwind: '$carData.vehicleModel' },
   );
+
+  if (search) {
+    const searchRegex = new RegExp(search, 'i');
+    pipeline.push({
+      $match: {
+        $or: [
+          { 'carData.make.name': searchRegex },
+          { 'carData.vehicleModel.name': searchRegex },
+          { 'cityData.name': searchRegex },
+        ],
+      },
+    });
+  }
 
   pipeline.push({
     $facet: {

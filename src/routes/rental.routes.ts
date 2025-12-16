@@ -138,6 +138,12 @@ const router = Router();
  *             type: string
  *         description: Filter by feature IDs (array of ObjectIds). Car must have ALL specified features.
  *         example: ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Text search against car make name, model name, or city name (case-insensitive). All filters work in combination (AND logic).
+ *         example: "Toyota"
  *     responses:
  *       200:
  *         description: Successfully retrieved rental listings with pagination metadata

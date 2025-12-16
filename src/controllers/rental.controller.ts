@@ -37,7 +37,7 @@ export const getMyRentalListingsHandler = catchAsync(
 
 export const getPublicRentalListingsHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const query = req.query as unknown as GetRentalListingsQuery;
+    const query = (req.validatedQuery || req.query) as unknown as GetRentalListingsQuery;
     const data = await rentalService.getPublicRentalListings(query);
 
     res.status(200).json({

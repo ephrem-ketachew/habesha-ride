@@ -4,6 +4,15 @@ import AppError from '../utils/appError.util.js';
 
 type ReqPart = 'body' | 'query' | 'params';
 
+declare global {
+  namespace Express {
+    interface Request {
+      validatedQuery?: any;
+      validatedParams?: any;
+    }
+  }
+}
+
 export const validate =
   (schema: z.ZodObject<any, any>, part: ReqPart = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
@@ -12,6 +21,12 @@ export const validate =
 
       if (part === 'body') {
         req.body = validated;
+      } else if (part === 'query') {
+        Object.assign(req.query, validated);
+        req.validatedQuery = validated;
+      } else if (part === 'params') {
+        Object.assign(req.params, validated);
+        req.validatedParams = validated;
       }
 
       next();

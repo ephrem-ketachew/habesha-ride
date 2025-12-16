@@ -56,7 +56,8 @@ export const getMySaleListings = async (userId: string) => {
 };
 
 export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
-  const { minPrice, maxPrice, page, limit, city } = query;
+  const { minPrice, maxPrice, page, limit, city, make, transmission, search } =
+    query;
 
   const pageNum = page ? Number(page) : 1;
   const limitNum = limit ? Number(limit) : 20;
@@ -67,9 +68,16 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
   };
 
   if (minPrice !== undefined || maxPrice !== undefined) {
-    matchStage.salePrice = {};
-    if (minPrice !== undefined) matchStage.salePrice.$gte = minPrice;
-    if (maxPrice !== undefined) matchStage.salePrice.$lte = maxPrice;
+    const priceFilter: any = {};
+    if (minPrice !== undefined && minPrice !== null && !isNaN(Number(minPrice))) {
+      priceFilter.$gte = Number(minPrice);
+    }
+    if (maxPrice !== undefined && maxPrice !== null && !isNaN(Number(maxPrice))) {
+      priceFilter.$lte = Number(maxPrice);
+    }
+    if (Object.keys(priceFilter).length > 0) {
+      matchStage.salePrice = priceFilter;
+    }
   }
 
   const pipeline: any[] = [
@@ -85,13 +93,21 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
     },
 
     { $unwind: '$carData' },
-
-    {
-      $match: {
-        'carData.verificationStatus': 'approved',
-      },
-    },
   ];
+
+  const carMatchStage: any = {
+    'carData.verificationStatus': 'approved',
+  };
+
+  if (make) {
+    carMatchStage['carData.make'] = new mongoose.Types.ObjectId(make);
+  }
+
+  if (transmission) {
+    carMatchStage['carData.transmission'] = transmission;
+  }
+
+  pipeline.push({ $match: carMatchStage });
 
   pipeline.push(
     {
@@ -145,6 +161,19 @@ export const getPublicSaleListings = async (query: GetSaleListingsQuery) => {
     },
     { $unwind: '$carData.vehicleModel' },
   );
+
+  if (search) {
+    const searchRegex = new RegExp(search, 'i');
+    pipeline.push({
+      $match: {
+        $or: [
+          { 'carData.make.name': searchRegex },
+          { 'carData.vehicleModel.name': searchRegex },
+          { 'cityData.name': searchRegex },
+        ],
+      },
+    });
+  }
 
   pipeline.push({
     $facet: {

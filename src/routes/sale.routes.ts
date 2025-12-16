@@ -68,6 +68,19 @@ const router = Router();
  *           type: string
  *         description: Filter by city location
  *         example: Addis Ababa
+ *       - in: query
+ *         name: transmission
+ *         schema:
+ *           type: string
+ *           enum: [automatic, manual]
+ *         description: Filter by transmission type. All filters work in combination (AND logic).
+ *         example: automatic
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Text search against car make name, model name, or city name (case-insensitive). All filters work in combination (AND logic).
+ *         example: "Toyota"
  *     responses:
  *       200:
  *         description: Successfully retrieved sale listings with pagination metadata
