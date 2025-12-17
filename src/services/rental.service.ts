@@ -360,8 +360,6 @@ export const getPublicRentalListings = async (
             instantBookingAvailable: 1,
             cancellationPolicy: 1,
             unavailableRanges: 1,
-            hasOverlappingUnavailableRange: 0,
-            conflictingBookings: 0,
             car: {
               _id: '$carData._id',
               make: '$carData.make',
