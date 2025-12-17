@@ -320,6 +320,92 @@ export const createBooking = async (
         'Failed to send instant booking creation emails',
       );
     }
+  } else {
+    // Non-instant booking: notify both parties that approval is required.
+    try {
+      const [renter, owner] = await Promise.all([
+        User.findById(renterId).select('firstName lastName email'),
+        User.findById(ownerIdObj).select('firstName lastName email'),
+      ]);
+
+      const bookingUrl = `${config.clientUrl}/dashboard/user/bookings/${String(booking._id)}`;
+
+      if (renter?.email) {
+        await sendEmail({
+          to: renter.email,
+          subject: 'Booking request submitted — waiting for owner approval',
+          text: [
+            `Hi ${renter.firstName || ''} ${renter.lastName || ''}`.trim() +
+              ',',
+            '',
+            'Your booking request has been submitted and is awaiting owner approval.',
+            '',
+            `Booking ID: ${String(booking._id)}`,
+            `Start: ${startDate.toISOString()}`,
+            `End: ${endDate.toISOString()}`,
+            '',
+            `View booking: ${bookingUrl}`,
+            '',
+            'We’ll notify you once the owner approves or rejects your request.',
+          ].join('\n'),
+          html: `
+            <p>Hi <strong>${renter.firstName || ''} ${renter.lastName || ''}</strong>,</p>
+            <p>Your booking request has been submitted and is awaiting owner approval.</p>
+            <p>
+              <strong>Booking ID:</strong> ${String(booking._id)}<br/>
+              <strong>Start:</strong> ${startDate.toISOString()}<br/>
+              <strong>End:</strong> ${endDate.toISOString()}
+            </p>
+            <p><a href="${bookingUrl}">View booking</a></p>
+            <p>We’ll notify you once the owner approves or rejects your request.</p>
+          `.trim(),
+        });
+      }
+
+      if (owner?.email) {
+        const renterName = renter
+          ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim()
+          : 'A renter';
+
+        await sendEmail({
+          to: owner.email,
+          subject: 'New booking request — approval required',
+          text: [
+            `Hi ${owner.firstName || ''} ${owner.lastName || ''}`.trim() + ',',
+            '',
+            'You have received a new booking request. Please approve or reject it.',
+            '',
+            `Booking ID: ${String(booking._id)}`,
+            `Renter: ${renterName}`,
+            `Start: ${startDate.toISOString()}`,
+            `End: ${endDate.toISOString()}`,
+            '',
+            `Review request: ${bookingUrl}`,
+          ].join('\n'),
+          html: `
+            <p>Hi <strong>${owner.firstName || ''} ${owner.lastName || ''}</strong>,</p>
+            <p>You have received a new booking request. Please approve or reject it.</p>
+            <p>
+              <strong>Booking ID:</strong> ${String(booking._id)}<br/>
+              <strong>Renter:</strong> ${renterName}<br/>
+              <strong>Start:</strong> ${startDate.toISOString()}<br/>
+              <strong>End:</strong> ${endDate.toISOString()}
+            </p>
+            <p><a href="${bookingUrl}">Review request</a></p>
+          `.trim(),
+        });
+      }
+    } catch (emailError) {
+      logger.error(
+        {
+          err: emailError,
+          bookingId: booking._id,
+          renterId,
+          ownerId: ownerIdObj,
+        },
+        'Failed to send non-instant booking creation emails',
+      );
+    }
   }
 
   return {
@@ -497,6 +583,131 @@ export const updateBookingStatus = async (
   if (reason) booking.cancellationReason = reason;
 
   await booking.save();
+
+  if (status === 'confirmed' || status === 'rejected') {
+    try {
+      const [renter, owner] = await Promise.all([
+        User.findById(renterId).select('firstName lastName email'),
+        User.findById(ownerId).select('firstName lastName email'),
+      ]);
+
+      const bookingUrl = `${config.clientUrl}/dashboard/user/bookings/${String(booking._id)}`;
+
+      if (renter?.email) {
+        const subject =
+          status === 'confirmed'
+            ? 'Booking approved — you can now proceed with payment'
+            : 'Booking request rejected';
+
+        const amountDue = booking.totalPrice + booking.securityDeposit;
+        const rejectionReason = reason || booking.cancellationReason;
+
+        const textLines: string[] = [
+          `Hi ${renter.firstName || ''} ${renter.lastName || ''}`.trim() + ',',
+          '',
+          status === 'confirmed'
+            ? 'Good news! Your booking request has been approved by the owner.'
+            : 'Your booking request has been rejected by the owner.',
+          '',
+          `Booking ID: ${String(booking._id)}`,
+          `Start: ${booking.startDate.toISOString()}`,
+          `End: ${booking.endDate.toISOString()}`,
+        ];
+
+        if (status === 'confirmed') {
+          textLines.push(`Amount due (incl. deposit): ${amountDue} ETB`, '');
+        } else if (rejectionReason) {
+          textLines.push(`Reason: ${rejectionReason}`, '');
+        } else {
+          textLines.push('');
+        }
+
+        textLines.push(`View booking: ${bookingUrl}`);
+
+        if (status === 'confirmed') {
+          textLines.push(
+            '',
+            'Please complete payment to finalize your reservation.',
+          );
+        }
+
+        await sendEmail({
+          to: renter.email,
+          subject,
+          text: textLines.join('\n'),
+          html: `
+            <p>Hi <strong>${renter.firstName || ''} ${renter.lastName || ''}</strong>,</p>
+            <p>
+              ${
+                status === 'confirmed'
+                  ? 'Good news! Your booking request has been approved by the owner.'
+                  : 'Your booking request has been rejected by the owner.'
+              }
+            </p>
+            <p>
+              <strong>Booking ID:</strong> ${String(booking._id)}<br/>
+              <strong>Start:</strong> ${booking.startDate.toISOString()}<br/>
+              <strong>End:</strong> ${booking.endDate.toISOString()}<br/>
+              ${
+                status === 'confirmed'
+                  ? `<strong>Amount due (incl. deposit):</strong> ${amountDue} ETB<br/>`
+                  : rejectionReason
+                    ? `<strong>Reason:</strong> ${rejectionReason}<br/>`
+                    : ''
+              }
+            </p>
+            <p><a href="${bookingUrl}">View booking</a></p>
+            ${
+              status === 'confirmed'
+                ? '<p>Please complete payment to finalize your reservation.</p>'
+                : ''
+            }
+          `.trim(),
+        });
+      }
+
+      if (owner?.email) {
+        await sendEmail({
+          to: owner.email,
+          subject:
+            status === 'confirmed'
+              ? 'Booking request approved'
+              : 'Booking request rejected',
+          text: [
+            `Hi ${owner.firstName || ''} ${owner.lastName || ''}`.trim() + ',',
+            '',
+            status === 'confirmed'
+              ? 'You approved a booking request.'
+              : 'You rejected a booking request.',
+            '',
+            `Booking ID: ${String(booking._id)}`,
+            '',
+            `View booking: ${bookingUrl}`,
+          ].join('\n'),
+          html: `
+            <p>Hi <strong>${owner.firstName || ''} ${owner.lastName || ''}</strong>,</p>
+            <p>${
+              status === 'confirmed'
+                ? 'You approved a booking request.'
+                : 'You rejected a booking request.'
+            }</p>
+            <p><strong>Booking ID:</strong> ${String(booking._id)}</p>
+            <p><a href="${bookingUrl}">View booking</a></p>
+          `.trim(),
+        });
+      }
+    } catch (emailError) {
+      logger.error(
+        {
+          err: emailError,
+          bookingId: booking._id,
+          status,
+        },
+        'Failed to send booking status update emails',
+      );
+    }
+  }
+
   return booking;
 };
 
