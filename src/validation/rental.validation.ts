@@ -200,59 +200,104 @@ const genericColorEnum = z.enum([
 
 const conditionEnum = z.enum(['new', 'excellent', 'good', 'fair', 'poor']);
 
-export const getRentalListingsQuerySchema = z.object({
-  make: z
-    .string()
-    .refine((val) => mongoose.Types.ObjectId.isValid(val), {
-      message: 'Invalid Make ID format.',
-    })
-    .optional(),
-  model: z.string().optional(),
-  bodyType: bodyTypeEnum.optional(),
-  transmission: transmissionEnum.optional(),
-  fuelType: fuelTypeEnum.optional(),
-  genericColor: genericColorEnum.optional(),
-  condition: conditionEnum.optional(),
-  minSeats: z.coerce.number().min(1).optional(),
-  minYear: z.coerce.number().min(1900).optional(),
-  maxYear: z.coerce.number().optional(),
-  deliveryAvailable: z
-    .union([z.string(), z.boolean()])
-    .optional()
-    .transform((val) => {
-      if (val === undefined) return undefined;
-      if (typeof val === 'boolean') return val;
-      if (val === 'true') return true;
-      if (val === 'false') return false;
-      return undefined;
-    }),
-  features: z
-    .union([
-      z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
-        message: 'Invalid Feature ID format.',
+export const getRentalListingsQuerySchema = z
+  .object({
+    make: z
+      .string()
+      .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+        message: 'Invalid Make ID format.',
+      })
+      .optional(),
+    model: z.string().optional(),
+    bodyType: bodyTypeEnum.optional(),
+    transmission: transmissionEnum.optional(),
+    fuelType: fuelTypeEnum.optional(),
+    genericColor: genericColorEnum.optional(),
+    condition: conditionEnum.optional(),
+    minSeats: z.coerce.number().min(1).optional(),
+    minYear: z.coerce.number().min(1900).optional(),
+    maxYear: z.coerce.number().optional(),
+    deliveryAvailable: z
+      .union([z.string(), z.boolean()])
+      .optional()
+      .transform((val) => {
+        if (val === undefined) return undefined;
+        if (typeof val === 'boolean') return val;
+        if (val === 'true') return true;
+        if (val === 'false') return false;
+        return undefined;
       }),
-      z
-        .array(
-          z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
-            message: 'Invalid Feature ID format.',
-          }),
-        )
-        .min(1),
-    ])
-    .optional()
-    .transform((val) => {
-      if (val === undefined) return undefined;
-      if (typeof val === 'string') return [val];
-      return val;
-    }),
-  minPrice: z.coerce.number().optional(),
-  maxPrice: z.coerce.number().optional(),
-  city: z.string().optional(),
-  search: z.string().optional(),
-  isFeatured: z.coerce.boolean().optional(),
-  page: z.coerce.number().min(1).optional().default(1),
-  limit: z.coerce.number().min(1).max(100).optional().default(20),
-});
+    features: z
+      .union([
+        z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+          message: 'Invalid Feature ID format.',
+        }),
+        z
+          .array(
+            z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+              message: 'Invalid Feature ID format.',
+            }),
+          )
+          .min(1),
+      ])
+      .optional()
+      .transform((val) => {
+        if (val === undefined) return undefined;
+        if (typeof val === 'string') return [val];
+        return val;
+      }),
+    minPrice: z.coerce.number().optional(),
+    maxPrice: z.coerce.number().optional(),
+    city: z.string().optional(),
+    pickupDate: z.coerce.date().optional(),
+    returnDate: z.coerce.date().optional(),
+    search: z.string().optional(),
+    isFeatured: z.coerce.boolean().optional(),
+    page: z.coerce.number().min(1).optional().default(1),
+    limit: z.coerce.number().min(1).max(100).optional().default(20),
+  })
+  .refine(
+    (data) => {
+      // If pickupDate or returnDate is provided, both must be provided
+      if (data.pickupDate && !data.returnDate) {
+        return false;
+      }
+      if (data.returnDate && !data.pickupDate) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Both pickupDate and returnDate must be provided together.',
+      path: ['pickupDate'],
+    },
+  )
+  .refine(
+    (data) => {
+      // If dates are provided, returnDate must be after pickupDate
+      if (data.pickupDate && data.returnDate) {
+        return data.returnDate.getTime() > data.pickupDate.getTime();
+      }
+      return true;
+    },
+    {
+      message: 'returnDate must be after pickupDate.',
+      path: ['returnDate'],
+    },
+  )
+  .refine(
+    (data) => {
+      // If dates are provided, city is required
+      if (data.pickupDate && data.returnDate && !data.city) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'city is required when pickupDate and returnDate are provided.',
+      path: ['city'],
+    },
+  );
 
 export type CreateRentalListingInput = z.infer<
   typeof createRentalListingSchema

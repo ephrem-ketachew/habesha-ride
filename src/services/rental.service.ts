@@ -77,6 +77,8 @@ export const getPublicRentalListings = async (
     features,
     search,
     isFeatured,
+    pickupDate,
+    returnDate,
   } = query;
 
   const pageNum = page ? Number(page) : 1;
@@ -259,6 +261,78 @@ export const getPublicRentalListings = async (
     });
   }
 
+  // If date range is provided, filter by availability
+  if (pickupDate && returnDate) {
+    // Convert dates to ensure they're Date objects
+    const pickupDateObj = new Date(pickupDate);
+    const returnDateObj = new Date(returnDate);
+
+    // Lookup bookings to check for conflicts
+    pipeline.push({
+      $lookup: {
+        from: 'bookings',
+        let: {
+          listingId: '$_id',
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$listing', '$$listingId'] },
+                  {
+                    $in: ['$status', ['pending', 'confirmed', 'active']],
+                  },
+                ],
+              },
+              startDate: { $lt: returnDateObj },
+              endDate: { $gt: pickupDateObj },
+            },
+          },
+        ],
+        as: 'conflictingBookings',
+      },
+    });
+
+    // Filter out listings with conflicting bookings
+    pipeline.push({
+      $match: {
+        conflictingBookings: { $size: 0 },
+      },
+    });
+
+    // Filter out listings with unavailable ranges that overlap
+    // We'll use $addFields to check unavailable ranges
+    pipeline.push({
+      $addFields: {
+        hasOverlappingUnavailableRange: {
+          $anyElementTrue: {
+            $map: {
+              input: '$unavailableRanges',
+              as: 'range',
+              in: {
+                $and: [
+                  {
+                    $lt: [pickupDateObj, '$$range.endDate'],
+                  },
+                  {
+                    $gt: [returnDateObj, '$$range.startDate'],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+
+    pipeline.push({
+      $match: {
+        hasOverlappingUnavailableRange: false,
+      },
+    });
+  }
+
   pipeline.push({
     $facet: {
       metadata: [{ $count: 'total' }],
@@ -286,6 +360,8 @@ export const getPublicRentalListings = async (
             instantBookingAvailable: 1,
             cancellationPolicy: 1,
             unavailableRanges: 1,
+            hasOverlappingUnavailableRange: 0,
+            conflictingBookings: 0,
             car: {
               _id: '$carData._id',
               make: '$carData.make',

@@ -67,8 +67,22 @@ const router = Router();
  *         name: city
  *         schema:
  *           type: string
- *         description: Filter by city location
+ *         description: Filter by city location. Required when pickupDate and returnDate are provided.
  *         example: Addis Ababa
+ *       - in: query
+ *         name: pickupDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Pickup date and time (ISO 8601 format). Must be provided together with returnDate. When provided, city is required and listings will be filtered by date availability (excluding listings with overlapping bookings or unavailable ranges).
+ *         example: "2024-02-01T10:00:00Z"
+ *       - in: query
+ *         name: returnDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Return date and time (ISO 8601 format). Must be provided together with pickupDate and must be after pickupDate. When provided, city is required and listings will be filtered by date availability (excluding listings with overlapping bookings or unavailable ranges).
+ *         example: "2024-02-05T18:00:00Z"
  *       - in: query
  *         name: bodyType
  *         schema:
