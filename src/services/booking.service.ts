@@ -2,11 +2,14 @@ import mongoose from 'mongoose';
 import Booking from '../models/booking.model.js';
 import RentalListing from '../models/rentalListing.model.js';
 import Car from '../models/car.model.js';
+import User from '../models/user.model.js';
 import { CreateBookingInput } from '../validation/booking.validation.js';
 import AppError from '../utils/appError.util.js';
 import { IUserDocument } from '../types/user.types.js';
 import { IPriceBreakdown, IBookingDocument } from '../types/booking.types.js';
 import logger from '../config/logger.config.js';
+import config from '../config/env.config.js';
+import { sendEmail } from '../utils/email.util.js';
 
 const SERVICE_FEE_PERCENT = 0.05;
 const MAX_ODOMETER_TOLERANCE_KM = 100;
@@ -229,6 +232,94 @@ export const createBooking = async (
   });
 
   const isInstantBooking = listing.instantBookingAvailable;
+
+  if (isInstantBooking) {
+    try {
+      const [renter, owner] = await Promise.all([
+        User.findById(renterId).select('firstName lastName email'),
+        User.findById(ownerIdObj).select('firstName lastName email'),
+      ]);
+
+      if (renter?.email) {
+        const bookingUrl = `${config.clientUrl}/bookings/${String(booking._id)}`;
+        const amountDue = totalPrice + listing.securityDeposit;
+
+        await sendEmail({
+          to: renter.email,
+          subject: 'Instant booking created — complete payment to confirm',
+          text: [
+            `Hi ${renter.firstName || ''} ${renter.lastName || ''}`.trim() +
+              ',',
+            '',
+            'Your instant booking has been created and reserved for you. Please complete payment to finalize it.',
+            '',
+            `Booking ID: ${String(booking._id)}`,
+            `Start: ${startDate.toISOString()}`,
+            `End: ${endDate.toISOString()}`,
+            `Amount due (incl. deposit): ${amountDue} ETB`,
+            '',
+            `View booking & pay: ${bookingUrl}`,
+          ].join('\n'),
+          html: `
+            <p>Hi <strong>${renter.firstName || ''} ${renter.lastName || ''}</strong>,</p>
+            <p>Your instant booking has been created and reserved for you. Please complete payment to finalize it.</p>
+            <p>
+              <strong>Booking ID:</strong> ${String(booking._id)}<br/>
+              <strong>Start:</strong> ${startDate.toISOString()}<br/>
+              <strong>End:</strong> ${endDate.toISOString()}<br/>
+              <strong>Amount due (incl. deposit):</strong> ${amountDue} ETB
+            </p>
+            <p><a href="${bookingUrl}">View booking & pay</a></p>
+          `.trim(),
+        });
+      }
+
+      if (owner?.email) {
+        const bookingUrl = `${config.clientUrl}/bookings/${String(booking._id)}`;
+        const renterName = renter
+          ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim()
+          : 'A renter';
+
+        await sendEmail({
+          to: owner.email,
+          subject: 'New instant booking received',
+          text: [
+            `Hi ${owner.firstName || ''} ${owner.lastName || ''}`.trim() + ',',
+            '',
+            'You have received a new instant booking.',
+            '',
+            `Booking ID: ${String(booking._id)}`,
+            `Renter: ${renterName}`,
+            `Start: ${startDate.toISOString()}`,
+            `End: ${endDate.toISOString()}`,
+            '',
+            `View reservation: ${bookingUrl}`,
+          ].join('\n'),
+          html: `
+            <p>Hi <strong>${owner.firstName || ''} ${owner.lastName || ''}</strong>,</p>
+            <p>You have received a new instant booking.</p>
+            <p>
+              <strong>Booking ID:</strong> ${String(booking._id)}<br/>
+              <strong>Renter:</strong> ${renterName}<br/>
+              <strong>Start:</strong> ${startDate.toISOString()}<br/>
+              <strong>End:</strong> ${endDate.toISOString()}
+            </p>
+            <p><a href="${bookingUrl}">View reservation</a></p>
+          `.trim(),
+        });
+      }
+    } catch (emailError) {
+      logger.error(
+        {
+          err: emailError,
+          bookingId: booking._id,
+          renterId,
+          ownerId: ownerIdObj,
+        },
+        'Failed to send instant booking creation emails',
+      );
+    }
+  }
 
   return {
     booking,
