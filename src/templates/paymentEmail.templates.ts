@@ -73,7 +73,7 @@ Rental Period: ${formatDate(bookingStartDate)} - ${formatDate(bookingEndDate)}
 
 Your booking is now confirmed. You can start your rental on the specified date.
 
-View your booking details: ${config.clientUrl}/bookings/${bookingId}
+View your booking details: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
 Thank you for choosing Kech.ai!
 
@@ -157,7 +157,7 @@ The Kech.ai Team
       <p style="margin-top: 30px;">Your booking is confirmed and you can start your rental on <strong>${formatDate(bookingStartDate)}</strong>.</p>
 
       <center>
-        <a href="${config.clientUrl}/bookings/${bookingId}" class="button">View Booking Details</a>
+        <a href="${config.clientUrl}/dashboard/user/bookings/${bookingId}" class="button">View Booking Details</a>
       </center>
 
       <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
@@ -198,7 +198,7 @@ ${failureReason ? `Reason: ${failureReason}` : ''}
 
 Your booking is still pending payment. Please try again to confirm your reservation.
 
-Retry payment: ${config.clientUrl}/bookings/${bookingId}
+Retry payment: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
 If you continue to experience issues, please contact our support team.
 
@@ -234,7 +234,7 @@ The Kech.ai Team
       <p>Your booking is still pending payment. Please try again to confirm your reservation.</p>
 
       <center>
-        <a href="${config.clientUrl}/bookings/${bookingId}" class="button" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">Retry Payment</a>
+        <a href="${config.clientUrl}/dashboard/user/bookings/${bookingId}" class="button" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">Retry Payment</a>
       </center>
 
       <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
@@ -283,7 +283,7 @@ Reason: ${reason}
 
 Your refund is being processed and should be completed within ${estimatedDays} business days.
 
-View your booking: ${config.clientUrl}/bookings/${bookingId}
+View your booking: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
 Thank you for your patience.
 
@@ -321,7 +321,7 @@ The Kech.ai Team
       <p><strong>Estimated Processing Time:</strong> ${estimatedDays} business days</p>
 
       <center>
-        <a href="${config.clientUrl}/bookings/${bookingId}" class="button">View Booking Details</a>
+        <a href="${config.clientUrl}/dashboard/user/bookings/${bookingId}" class="button">View Booking Details</a>
       </center>
 
       <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
@@ -363,7 +363,7 @@ Completed Date: ${formatDate(completedDate)}
 
 The funds have been returned to your original payment method.
 
-View your booking: ${config.clientUrl}/bookings/${bookingId}
+View your booking: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
 Thank you for using Kech.ai!
 
@@ -399,7 +399,7 @@ The Kech.ai Team
       <p>The amount of <strong>${formatCurrency(refundAmount)}</strong> has been returned to your original payment method.</p>
 
       <center>
-        <a href="${config.clientUrl}/bookings/${bookingId}" class="button">View Booking Details</a>
+        <a href="${config.clientUrl}/dashboard/user/bookings/${bookingId}" class="button">View Booking Details</a>
       </center>
 
       <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
@@ -443,7 +443,7 @@ ${expiresAt ? `Payment Expires: ${formatDate(expiresAt)}` : ''}
 
 Complete your payment to confirm your reservation.
 
-Complete payment: ${config.clientUrl}/bookings/${bookingId}
+Complete payment: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
 Best regards,
 The Kech.ai Team
@@ -478,7 +478,7 @@ The Kech.ai Team
       <p>Complete your payment to confirm your reservation and ensure your vehicle is ready on your rental start date.</p>
 
       <center>
-        <a href="${config.clientUrl}/bookings/${bookingId}" class="button" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Complete Payment Now</a>
+        <a href="${config.clientUrl}/dashboard/user/bookings/${bookingId}" class="button" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Complete Payment Now</a>
       </center>
 
       <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">

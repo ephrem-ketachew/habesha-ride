@@ -65,6 +65,15 @@ export const updateSaleListingStatusAdminSchema = z.object({
   ),
 });
 
+export const getBookingsAdminSchema = z.object({
+  status: z
+    .enum(['pending', 'confirmed', 'active', 'completed', 'cancelled', 'rejected'])
+    .optional(),
+  paymentStatus: z.enum(['pending', 'paid', 'refunded', 'failed']).optional(),
+  page: z.coerce.number().min(1).optional().default(1),
+  limit: z.coerce.number().min(1).max(100).optional().default(20),
+});
+
 export const createMakeSchema = z.object({
   name: z.string().min(1, 'Make name is required').trim(),
   logoUrl: z.string().url().optional(),
@@ -95,6 +104,7 @@ export type UpdateMakeInput = z.infer<typeof updateMakeSchema>;
 export type CreateModelInput = z.infer<typeof createModelSchema>;
 
 export type GetListingsAdminQuery = z.infer<typeof getListingsAdminSchema>;
+export type GetBookingsAdminQuery = z.infer<typeof getBookingsAdminSchema>;
 
 export type UpdateRentalListingStatusAdminInput = z.infer<
   typeof updateRentalListingStatusAdminSchema

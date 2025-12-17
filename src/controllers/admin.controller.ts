@@ -10,6 +10,7 @@ import {
   UpdateUserStatusInput,
   GetListingsAdminQuery,
   UpdateUserRoleInput,
+  GetBookingsAdminQuery,
   CreateMakeInput,
   UpdateMakeInput,
   CreateModelInput,
@@ -33,6 +34,10 @@ import {
   deleteMake,
   deleteModel,
 } from '../services/admin.service.js';
+import {
+  getAllBookingsAdmin,
+  getBookingByIdAdmin,
+} from '../services/booking.service.js';
 
 export const getAllCarsAdminHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -247,5 +252,21 @@ export const deleteModelHandler = catchAsync(
     const { id } = req.params;
     await deleteModel(id);
     res.status(204).json({ status: 'success', data: null });
+  },
+);
+
+export const getAllBookingsAdminHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const query = req.query as unknown as GetBookingsAdminQuery;
+    const data = await getAllBookingsAdmin(query);
+    res.status(200).json({ status: 'success', ...data });
+  },
+);
+
+export const getBookingDetailsAdminHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const booking = await getBookingByIdAdmin(id);
+    res.status(200).json({ status: 'success', data: { booking } });
   },
 );

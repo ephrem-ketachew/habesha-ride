@@ -10,6 +10,7 @@ import {
   getListingsAdminSchema,
   updateSaleListingStatusAdminSchema,
   updateRentalListingStatusAdminSchema,
+  getBookingsAdminSchema,
   createModelSchema,
   createMakeSchema,
   updateMakeSchema,
@@ -893,6 +894,129 @@ router.get(
   '/listings/sale/:id',
   validate(getCarSchema, 'params'),
   adminController.getSaleListingDetailsHandler,
+);
+
+/**
+ * @swagger
+ * /admin/bookings:
+ *   get:
+ *     summary: Get all bookings (Admin view)
+ *     tags: [Admin]
+ *     description: Retrieve a paginated list of all bookings. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, active, completed, cancelled, rejected]
+ *         description: Filter bookings by booking status (optional)
+ *       - in: query
+ *         name: paymentStatus
+ *         schema:
+ *           type: string
+ *           enum: [pending, paid, refunded, failed]
+ *         description: Filter bookings by payment status (optional)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Number of items per page (max 100)
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved bookings with pagination metadata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Booking'
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of bookings matching the query
+ *                   example: 120
+ *                 page:
+ *                   type: integer
+ *                   description: Current page number
+ *                   example: 1
+ *                 totalPages:
+ *                   type: integer
+ *                   description: Total number of pages
+ *                   example: 6
+ *       401:
+ *         description: Unauthorized - valid JWT cookie required
+ *       403:
+ *         description: Forbidden - admin or superadmin role required
+ */
+router.get(
+  '/bookings',
+  validate(getBookingsAdminSchema, 'query'),
+  adminController.getAllBookingsAdminHandler,
+);
+
+/**
+ * @swagger
+ * /admin/bookings/{id}:
+ *   get:
+ *     summary: Get booking details (Admin view)
+ *     tags: [Admin]
+ *     description: Retrieve detailed information about a specific booking. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID - must be a valid MongoDB ObjectId
+ *         example: 507f1f77bcf86cd799439011
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved booking details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     booking:
+ *                       $ref: '#/components/schemas/Booking'
+ *       400:
+ *         description: Bad request - invalid ID format
+ *       401:
+ *         description: Unauthorized - valid JWT cookie required
+ *       403:
+ *         description: Forbidden - admin or superadmin role required
+ *       404:
+ *         description: Booking not found
+ */
+router.get(
+  '/bookings/:id',
+  validate(getCarSchema, 'params'),
+  adminController.getBookingDetailsAdminHandler,
 );
 
 /**

@@ -4,6 +4,7 @@ import RentalListing from '../models/rentalListing.model.js';
 import Car from '../models/car.model.js';
 import User from '../models/user.model.js';
 import { CreateBookingInput } from '../validation/booking.validation.js';
+import { GetBookingsAdminQuery } from '../validation/admin.validation.js';
 import AppError from '../utils/appError.util.js';
 import { IUserDocument } from '../types/user.types.js';
 import { IPriceBreakdown, IBookingDocument } from '../types/booking.types.js';
@@ -241,7 +242,7 @@ export const createBooking = async (
       ]);
 
       if (renter?.email) {
-        const bookingUrl = `${config.clientUrl}/bookings/${String(booking._id)}`;
+        const bookingUrl = `${config.clientUrl}/dashboard/user/bookings/${String(booking._id)}`;
         const amountDue = totalPrice + listing.securityDeposit;
 
         await sendEmail({
@@ -275,7 +276,7 @@ export const createBooking = async (
       }
 
       if (owner?.email) {
-        const bookingUrl = `${config.clientUrl}/bookings/${String(booking._id)}`;
+        const bookingUrl = `${config.clientUrl}/dashboard/user/bookings/${String(booking._id)}`;
         const renterName = renter
           ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim()
           : 'A renter';
@@ -384,6 +385,64 @@ export const getBookingById = async (bookingId: string, userId: string) => {
 
   if (renterId !== userId && ownerId !== userId) {
     throw new AppError('Not authorized to view this booking.', 403);
+  }
+
+  return booking;
+};
+
+export const getAllBookingsAdmin = async (query: GetBookingsAdminQuery) => {
+  const { status, paymentStatus, page, limit } = query;
+
+  const filter: any = {};
+  if (status) filter.status = status;
+  if (paymentStatus) filter.paymentStatus = paymentStatus;
+
+  const skip = (page - 1) * limit;
+
+  const [bookings, total] = await Promise.all([
+    Booking.find(filter)
+      .populate({
+        path: 'car',
+        populate: [
+          { path: 'make', select: 'name' },
+          { path: 'vehicleModel', select: 'name' },
+          { path: 'homeLocation.city', select: 'name region' },
+        ],
+      })
+      .populate('listing', 'status ratePerDay city')
+      .populate('renter', 'firstName lastName email phoneNumber')
+      .populate('owner', 'firstName lastName email phoneNumber')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Booking.countDocuments(filter),
+  ]);
+
+  return {
+    bookings,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
+};
+
+export const getBookingByIdAdmin = async (bookingId: string) => {
+  const booking = await Booking.findById(bookingId)
+    .populate({
+      path: 'car',
+      populate: [
+        { path: 'make' },
+        { path: 'vehicleModel' },
+        { path: 'homeLocation.city' },
+        { path: 'features' },
+      ],
+    })
+    .populate('listing')
+    .populate('renter', 'firstName lastName email phoneNumber profileImage')
+    .populate('owner', 'firstName lastName email phoneNumber profileImage');
+
+  if (!booking) {
+    throw new AppError('Booking not found.', 404);
   }
 
   return booking;
