@@ -432,7 +432,7 @@ router.post(
  *                     booking:
  *                       $ref: '#/components/schemas/Booking'
  *       400:
- *         description: Bad request - invalid status, odometer already recorded, invalid reading, or total mileage exceeds reasonable daily limit (1000km/day)
+ *         description: Bad request - invalid status, owner attempted to complete before end date, odometer already recorded, invalid reading, or total mileage exceeds reasonable daily limit (1000km/day)
  *       401:
  *         description: Unauthorized - valid JWT cookie required
  *       403:

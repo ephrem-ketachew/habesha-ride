@@ -488,6 +488,14 @@ export const completeBooking = async (
     );
   }
 
+  const now = new Date();
+  if (ownerId === userId && now < booking.endDate) {
+    throw new AppError(
+      'Owner cannot complete booking before the scheduled end date.',
+      400,
+    );
+  }
+
   if (booking.odometerReadings.start === null) {
     throw new AppError(
       'Cannot complete booking without start odometer reading.',
