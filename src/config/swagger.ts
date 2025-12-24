@@ -78,7 +78,7 @@ const swaggerDefinition = {
     {
       name: 'Verification',
       description:
-        'Identity verification endpoints (Fayda eSignet integration)',
+        'Identity verification endpoints (Fayda eSignet for locals, Passport verification for foreigners)',
     },
   ],
 };

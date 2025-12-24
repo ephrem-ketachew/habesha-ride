@@ -11,6 +11,7 @@ import logger from './config/logger.config.js';
 import swaggerSpec from './config/swagger.js';
 import AppError from './utils/appError.util.js';
 import { globalErrorHandler } from './middleware/error.middleware.js';
+import { handleMulterError } from './utils/multer.util.js';
 
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
@@ -101,6 +102,8 @@ app.get('/', (req: Request, res: Response) => {
 app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
+
+app.use(handleMulterError);
 
 app.use(globalErrorHandler);
 

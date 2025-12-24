@@ -4,6 +4,7 @@ import * as verificationService from '../services/verification.service.js';
 import { FaydaCallbackInput } from '../validation/verification.schema.js';
 import config from '../config/env.config.js';
 import AppError from '../utils/appError.util.js';
+import { PassportVerificationInput } from '../types/passport.types.js';
 
 const verificationCookieOptions = {
   httpOnly: true,
@@ -106,6 +107,56 @@ export const revokeVerificationHandler = catchAsync(
     const { userId } = req.params;
 
     const result = await verificationService.revokeVerification(userId);
+
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  },
+);
+
+export const verifyPassportHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    if (!files?.passportImage || !files?.selfieImage) {
+      throw new AppError(
+        'Both passport image and selfie image are required.',
+        400,
+      );
+    }
+
+    const passportImage = files.passportImage[0];
+    const selfieImage = files.selfieImage[0];
+
+    const input: PassportVerificationInput = {
+      passportImage: {
+        buffer: passportImage.buffer,
+        mimetype: passportImage.mimetype,
+        size: passportImage.size,
+        originalname: passportImage.originalname,
+      },
+      selfieImage: {
+        buffer: selfieImage.buffer,
+        mimetype: selfieImage.mimetype,
+        size: selfieImage.size,
+        originalname: selfieImage.originalname,
+      },
+    };
+
+    const result = await verificationService.handlePassportVerification(
+      userId,
+      input,
+    );
+
+    if (!result.success) {
+      return res.status(200).json({
+        status: 'rejected',
+        data: result,
+      });
+    }
 
     res.status(200).json({
       status: 'success',

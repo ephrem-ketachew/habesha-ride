@@ -81,6 +81,8 @@
  *           description: Method used for identity verification
  *         faydaData:
  *           $ref: '#/components/schemas/FaydaData'
+ *         passportData:
+ *           $ref: '#/components/schemas/PassportData'
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -143,6 +145,69 @@
  *           nullable: true
  *           description: Timestamp when data was verified from Fayda
  *           example: "2025-12-11T10:30:00.000Z"
+ *     PassportData:
+ *       type: object
+ *       description: User data extracted from passport verification (for international users)
+ *       properties:
+ *         passportNumber:
+ *           type: string
+ *           description: Passport number
+ *           example: "N1234567"
+ *         nationality:
+ *           type: string
+ *           description: Nationality (3-letter country code)
+ *           example: "USA"
+ *         fullName:
+ *           type: string
+ *           description: Full name from passport
+ *           example: "JOHN DOE"
+ *         firstName:
+ *           type: string
+ *           description: First name from passport
+ *           example: "JOHN"
+ *         lastName:
+ *           type: string
+ *           description: Last name from passport
+ *           example: "DOE"
+ *         birthdate:
+ *           type: string
+ *           format: date
+ *           description: Date of birth (YYYY-MM-DD)
+ *           example: "1990-05-15"
+ *         expiryDate:
+ *           type: string
+ *           format: date
+ *           description: Passport expiry date (YYYY-MM-DD)
+ *           example: "2030-05-15"
+ *         sex:
+ *           type: string
+ *           enum: [M, F, X]
+ *           description: Gender
+ *           example: "M"
+ *         similarityScore:
+ *           type: number
+ *           description: Face match confidence score from AWS Rekognition (0-100)
+ *           example: 95.5
+ *         passportImageUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           description: Cloudinary URL of passport image (optional)
+ *         selfieImageUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           description: Cloudinary URL of selfie image (optional)
+ *         verifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when passport was verified
+ *           example: "2025-12-22T10:30:00.000Z"
+ *         mrzRaw:
+ *           type: string
+ *           nullable: true
+ *           description: Raw MRZ text for debugging purposes
  *     UserVerificationData:
  *       type: object
  *       description: User identity verification data returned by verification endpoints
@@ -170,6 +235,8 @@
  *           description: Fayda subject identifier
  *         faydaData:
  *           $ref: '#/components/schemas/FaydaData'
+ *         passportData:
+ *           $ref: '#/components/schemas/PassportData'
  *     VerificationStatus:
  *       type: object
  *       description: Current identity verification status for a user
@@ -195,6 +262,10 @@
  *           $ref: '#/components/schemas/FaydaData'
  *           nullable: true
  *           description: Fayda user data (if verified via Fayda)
+ *         passportData:
+ *           $ref: '#/components/schemas/PassportData'
+ *           nullable: true
+ *           description: Passport data (if verified via passport)
  */
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
@@ -386,6 +457,51 @@ const userSchema = new Schema<IUserDocument>(
         default: Date.now,
       },
     },
+
+    passportData: {
+      passportNumber: {
+        type: String,
+        sparse: true,
+      },
+      nationality: {
+        type: String,
+      },
+      fullName: {
+        type: String,
+      },
+      firstName: {
+        type: String,
+      },
+      lastName: {
+        type: String,
+      },
+      birthdate: {
+        type: String,
+      },
+      expiryDate: {
+        type: String,
+      },
+      sex: {
+        type: String,
+        enum: ['M', 'F', 'X'],
+      },
+      similarityScore: {
+        type: Number,
+      },
+      passportImageUrl: {
+        type: String,
+      },
+      selfieImageUrl: {
+        type: String,
+      },
+      verifiedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      mrzRaw: {
+        type: String,
+      },
+    },
   },
   {
     timestamps: true,
@@ -406,6 +522,11 @@ userSchema.index({ role: 1, status: 1 });
 userSchema.index({ faydaId: 1 }, { unique: true, sparse: true });
 userSchema.index({ isIdentityVerified: 1 });
 userSchema.index({ identityVerifiedAt: 1 });
+
+userSchema.index(
+  { 'passportData.passportNumber': 1 },
+  { unique: true, sparse: true },
+);
 
 userSchema.index({
   firstName: 'text',

@@ -134,6 +134,26 @@ const config: AppConfig = {
     privateKeyBase64: getEnvVar('FAYDA_PRIVATE_KEY_BASE64', true)!,
     claimsLocales: getEnvVar('FAYDA_CLAIMS_LOCALES', false, 'en am')!,
   },
+
+  passport: {
+    googleProjectId: getEnvVar('GOOGLE_CLOUD_PROJECT_ID', false, '')!,
+    googleCredentialsPath: getEnvVar('GOOGLE_APPLICATION_CREDENTIALS', false),
+    googleServiceAccountKeyBase64: getEnvVar(
+      'GOOGLE_SERVICE_ACCOUNT_KEY_BASE64',
+      false,
+    ),
+    awsAccessKeyId: getEnvVar('AWS_ACCESS_KEY_ID', false, '')!,
+    awsSecretAccessKey: getEnvVar('AWS_SECRET_ACCESS_KEY', false, '')!,
+    awsRegion: getEnvVar('AWS_REGION', false, 'us-east-1')!,
+    awsSimilarityThreshold: getEnvVarAsInt(
+      'AWS_REKOGNITION_SIMILARITY_THRESHOLD',
+      false,
+      90,
+    )!,
+    maxFileSize: getEnvVarAsInt('PASSPORT_MAX_FILE_SIZE', false, 5242880)!,
+    minAge: getEnvVarAsInt('PASSPORT_MIN_AGE', false, 18)!,
+    imageQuality: getEnvVarAsInt('PASSPORT_IMAGE_QUALITY', false, 80)!,
+  },
 };
 
 export default isProduction ? Object.freeze(config) : config;

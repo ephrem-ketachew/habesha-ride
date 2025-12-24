@@ -31,7 +31,6 @@ export interface IUser {
   passwordResetExpires?: Date;
   googleId?: string;
 
-  // Identity Verification Fields
   faydaId?: string;
   isIdentityVerified: boolean;
   identityVerifiedAt?: Date;
@@ -49,6 +48,22 @@ export interface IUser {
     phone_number?: string;
     email?: string;
     verifiedAt?: Date;
+  };
+
+  passportData?: {
+    passportNumber?: string;
+    nationality?: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    birthdate?: string;
+    expiryDate?: string;
+    sex?: 'M' | 'F' | 'X';
+    similarityScore?: number;
+    passportImageUrl?: string;
+    selfieImageUrl?: string;
+    verifiedAt?: Date;
+    mrzRaw?: string;
   };
 }
 

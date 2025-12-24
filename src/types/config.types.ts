@@ -62,6 +62,19 @@ interface FaydaConfig {
   claimsLocales: string;
 }
 
+interface PassportConfig {
+  googleProjectId: string;
+  googleCredentialsPath?: string;
+  googleServiceAccountKeyBase64?: string;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  awsRegion: string;
+  awsSimilarityThreshold: number;
+  maxFileSize: number;
+  minAge: number;
+  imageQuality: number;
+}
+
 export interface AppConfig {
   nodeEnv: 'development' | 'production' | 'test';
   isProduction: boolean;
@@ -82,4 +95,5 @@ export interface AppConfig {
   chapa: ChapaConfig;
   payment: PaymentConfig;
   fayda: FaydaConfig;
+  passport: PassportConfig;
 }

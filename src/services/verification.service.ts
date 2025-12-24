@@ -14,6 +14,8 @@ import {
   getUserInfo,
   decodeUserInfoJWT,
 } from '../utils/fayda.util.js';
+import { verifyPassport, checkPassportExists } from './passport.service.js';
+import { PassportVerificationInput } from '../types/passport.types.js';
 
 export const initiateFaydaVerification = async (userId: string) => {
   const user = await User.findById(userId);
@@ -176,9 +178,157 @@ export const handleFaydaCallback = async (
   }
 };
 
+export const handlePassportVerification = async (
+  userId: string,
+  input: PassportVerificationInput,
+) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+
+  if (user.isIdentityVerified) {
+    logger.warn(
+      {
+        userId,
+        currentMethod: user.identityVerificationMethod,
+      },
+      'Attempted passport verification on already verified user',
+    );
+    throw new AppError(
+      `Your identity is already verified via ${user.identityVerificationMethod}. You cannot verify again.`,
+      400,
+    );
+  }
+
+  logger.info({ userId }, 'Starting passport verification process');
+
+  try {
+    const verificationResult = await verifyPassport(input);
+
+    if (!verificationResult.approved) {
+      logger.warn(
+        {
+          userId,
+          reason: verificationResult.reason,
+          validations: verificationResult.validations,
+        },
+        'Passport verification rejected',
+      );
+
+      return {
+        success: false,
+        approved: false,
+        reason: verificationResult.reason,
+        validations: verificationResult.validations,
+        biometricResult: verificationResult.biometricResult
+          ? {
+              similarity: verificationResult.biometricResult.similarity,
+              faceMatches: verificationResult.biometricResult.faceMatches,
+            }
+          : undefined,
+      };
+    }
+
+    const passportNumber = verificationResult.passportData!.passportNumber;
+    const passportExists = await checkPassportExists(passportNumber);
+
+    if (passportExists) {
+      logger.warn(
+        {
+          userId,
+          passportNumber,
+        },
+        'Attempted to use duplicate passport number',
+      );
+      throw new AppError(
+        'This passport is already registered in our system. Each passport can only be used once.',
+        409,
+      );
+    }
+
+    user.isIdentityVerified = true;
+    user.identityVerifiedAt = new Date();
+    user.identityVerificationMethod = 'passport';
+    user.passportData = {
+      passportNumber: verificationResult.passportData!.passportNumber,
+      nationality: verificationResult.passportData!.nationality,
+      fullName: verificationResult.passportData!.fullName,
+      firstName: verificationResult.passportData!.firstName,
+      lastName: verificationResult.passportData!.lastName,
+      birthdate: verificationResult.passportData!.birthdate,
+      expiryDate: verificationResult.passportData!.expiryDate,
+      sex: verificationResult.passportData!.sex,
+      similarityScore: verificationResult.biometricResult!.similarity,
+      verifiedAt: new Date(),
+      mrzRaw: verificationResult.passportData!.mrzRaw,
+    };
+
+    await user.save();
+
+    logger.info(
+      {
+        userId,
+        passportNumber,
+        nationality: verificationResult.passportData!.nationality,
+        similarityScore:
+          verificationResult.biometricResult!.similarity.toFixed(2),
+      },
+      'Passport verification completed successfully',
+    );
+
+    return {
+      success: true,
+      approved: true,
+      message: 'Identity verified successfully via passport',
+      user: {
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        isIdentityVerified: user.isIdentityVerified,
+        identityVerificationMethod: user.identityVerificationMethod,
+        identityVerifiedAt: user.identityVerifiedAt,
+        passportData: {
+          passportNumber: user.passportData!.passportNumber,
+          nationality: user.passportData!.nationality,
+          fullName: user.passportData!.fullName,
+          birthdate: user.passportData!.birthdate,
+          expiryDate: user.passportData!.expiryDate,
+          sex: user.passportData!.sex,
+          similarityScore: user.passportData!.similarityScore,
+          verifiedAt: user.passportData!.verifiedAt,
+        },
+      },
+      validations: verificationResult.validations,
+      biometricResult: {
+        similarity: verificationResult.biometricResult!.similarity,
+        faceMatches: verificationResult.biometricResult!.faceMatches,
+        confidence: verificationResult.biometricResult!.confidence,
+      },
+    };
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    logger.error(
+      {
+        error: error.message,
+        stack: error.stack,
+        userId,
+      },
+      'Unexpected error during passport verification',
+    );
+
+    throw new AppError(
+      'Failed to complete passport verification. Please try again.',
+      500,
+    );
+  }
+};
+
 export const getVerificationStatus = async (userId: string) => {
   const user = await User.findById(userId).select(
-    '+faydaId +isIdentityVerified +identityVerifiedAt +identityVerificationMethod +faydaData',
+    '+faydaId +isIdentityVerified +identityVerifiedAt +identityVerificationMethod +faydaData +passportData',
   );
 
   if (!user) {
@@ -199,6 +349,20 @@ export const getVerificationStatus = async (userId: string) => {
           picture: user.faydaData.picture,
         }
       : null,
+    passportData: user.passportData
+      ? {
+          passportNumber: user.passportData.passportNumber,
+          nationality: user.passportData.nationality,
+          fullName: user.passportData.fullName,
+          firstName: user.passportData.firstName,
+          lastName: user.passportData.lastName,
+          birthdate: user.passportData.birthdate,
+          expiryDate: user.passportData.expiryDate,
+          sex: user.passportData.sex,
+          similarityScore: user.passportData.similarityScore,
+          verifiedAt: user.passportData.verifiedAt,
+        }
+      : null,
   };
 };
 
@@ -213,17 +377,20 @@ export const revokeVerification = async (userId: string) => {
     throw new AppError('User is not verified.', 400);
   }
 
+  const previousMethod = user.identityVerificationMethod;
+
   user.isIdentityVerified = false;
   user.identityVerifiedAt = undefined;
   user.identityVerificationMethod = undefined;
   user.faydaId = undefined;
   user.faydaData = undefined;
+  user.passportData = undefined;
 
   await user.save();
 
-  logger.info({ userId }, 'Verification revoked by admin');
+  logger.info({ userId, previousMethod }, 'Verification revoked by admin');
 
   return {
-    message: 'Verification revoked successfully',
+    message: `${previousMethod === 'passport' ? 'Passport' : 'Fayda'} verification revoked successfully`,
   };
 };
