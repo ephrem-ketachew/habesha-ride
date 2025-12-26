@@ -4,7 +4,7 @@ import AppError from './appError.util.js';
 import config from '../config/env.config.js';
 import logger from '../config/logger.config.js';
 
-const passportFileFilter = (
+const imageFileFilter = (
   req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
@@ -39,6 +39,8 @@ const passportFileFilter = (
   }
 };
 
+const passportFileFilter = imageFileFilter;
+
 export const uploadPassportImages = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -50,6 +52,19 @@ export const uploadPassportImages = multer({
 }).fields([
   { name: 'passportImage', maxCount: 1 },
   { name: 'selfieImage', maxCount: 1 },
+]);
+
+export const uploadLicenseImages = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: config.license.maxFileSize,
+    files: 2,
+    fields: 2,
+  },
+  fileFilter: imageFileFilter,
+}).fields([
+  { name: 'frontImage', maxCount: 1 },
+  { name: 'backImage', maxCount: 1 },
 ]);
 
 export const validatePassportImages = (req: any, res: any, next: any) => {
@@ -116,6 +131,67 @@ export const validatePassportImages = (req: any, res: any, next: any) => {
   next();
 };
 
+export const validateLicenseImages = (req: any, res: any, next: any) => {
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+  logger.debug(
+    {
+      filesPresent: !!files,
+      fieldNames: files ? Object.keys(files) : [],
+    },
+    'Validating license images',
+  );
+
+  if (!files) {
+    logger.warn('No files uploaded');
+    throw new AppError('Front image of license is required.', 400);
+  }
+
+  if (!files.frontImage) {
+    logger.warn('Missing front image');
+    throw new AppError('Front image of license is required.', 400);
+  }
+
+  if (files.frontImage.length !== 1) {
+    logger.warn(
+      { frontImageCount: files.frontImage?.length || 0 },
+      'Incorrect number of front images',
+    );
+    throw new AppError('Exactly one front image is required.', 400);
+  }
+
+  if (files.backImage && files.backImage.length !== 1) {
+    logger.warn(
+      { backImageCount: files.backImage?.length || 0 },
+      'Incorrect number of back images',
+    );
+    throw new AppError(
+      'If providing back image, exactly one back image is required.',
+      400,
+    );
+  }
+
+  const logData: any = {
+    frontImage: {
+      originalname: files.frontImage[0].originalname,
+      size: files.frontImage[0].size,
+      mimetype: files.frontImage[0].mimetype,
+    },
+  };
+
+  if (files.backImage) {
+    logData.backImage = {
+      originalname: files.backImage[0].originalname,
+      size: files.backImage[0].size,
+      mimetype: files.backImage[0].mimetype,
+    };
+  }
+
+  logger.info(logData, 'License images validated successfully');
+
+  next();
+};
+
 export const handleMulterError = (
   error: any,
   req: any,
@@ -128,14 +204,18 @@ export const handleMulterError = (
         code: error.code,
         field: error.field,
         message: error.message,
+        path: req.path,
       },
       'Multer error occurred',
     );
 
     if (error.code === 'LIMIT_FILE_SIZE') {
-      const maxSizeMB = (config.passport.maxFileSize / (1024 * 1024)).toFixed(
-        1,
-      );
+      const isLicense = req.path.includes('/license');
+      const maxSize = isLicense
+        ? config.license.maxFileSize
+        : config.passport.maxFileSize;
+      const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(1);
+
       return next(
         new AppError(
           `File too large. Maximum size is ${maxSizeMB}MB per image.`,
@@ -145,18 +225,23 @@ export const handleMulterError = (
     }
 
     if (error.code === 'LIMIT_FILE_COUNT') {
-      return next(
-        new AppError(
-          'Too many files. Only 2 files are allowed (passport image and selfie).',
-          400,
-        ),
-      );
+      const isLicense = req.path.includes('/license');
+      const message = isLicense
+        ? 'Too many files. Maximum 2 files allowed (front and optional back image).'
+        : 'Too many files. Only 2 files are allowed (passport image and selfie).';
+
+      return next(new AppError(message, 400));
     }
 
     if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      const isLicense = req.path.includes('/license');
+      const allowedFields = isLicense
+        ? "'frontImage' and 'backImage'"
+        : "'passportImage' and 'selfieImage'";
+
       return next(
         new AppError(
-          `Unexpected field: ${error.field}. Only 'passportImage' and 'selfieImage' fields are allowed.`,
+          `Unexpected field: ${error.field}. Only ${allowedFields} fields are allowed.`,
           400,
         ),
       );

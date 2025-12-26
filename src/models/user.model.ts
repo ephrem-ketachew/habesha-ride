@@ -83,6 +83,18 @@
  *           $ref: '#/components/schemas/FaydaData'
  *         passportData:
  *           $ref: '#/components/schemas/PassportData'
+ *         isDrivingLicenseVerified:
+ *           type: boolean
+ *           default: false
+ *           description: Driver license verification status
+ *         licenseVerifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when driver license was verified
+ *           example: "2025-12-24T10:30:00.000Z"
+ *         licenseData:
+ *           $ref: '#/components/schemas/LicenseData'
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -208,6 +220,89 @@
  *           type: string
  *           nullable: true
  *           description: Raw MRZ text for debugging purposes
+ *     LicenseData:
+ *       type: object
+ *       description: Driver license data extracted via OCR
+ *       properties:
+ *         licenseNumber:
+ *           type: string
+ *           description: Driver license number
+ *           example: "ET-AA-1234567"
+ *         fullName:
+ *           type: string
+ *           description: Full name from license
+ *           example: "JOHN DOE"
+ *         birthdate:
+ *           type: string
+ *           format: date
+ *           description: Date of birth (YYYY-MM-DD)
+ *           example: "1990-05-15"
+ *         expiryDate:
+ *           type: string
+ *           format: date
+ *           description: License expiry date (YYYY-MM-DD)
+ *           example: "2030-05-15"
+ *         issueDate:
+ *           type: string
+ *           format: date
+ *           nullable: true
+ *           description: License issue date (YYYY-MM-DD)
+ *           example: "2020-05-15"
+ *         licenseClass:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: License classes (e.g., A, B, C, D, E)
+ *           example: ["B", "C"]
+ *         bloodType:
+ *           type: string
+ *           nullable: true
+ *           description: Blood type (common on Ethiopian licenses)
+ *           example: "A+"
+ *         nationality:
+ *           type: string
+ *           description: Nationality
+ *           example: "ETH"
+ *         isInternationalLicense:
+ *           type: boolean
+ *           default: false
+ *           description: Whether this is an international driving permit
+ *         countryOfIssue:
+ *           type: string
+ *           description: Country code of issuing country
+ *           example: "ETH"
+ *         licenseImageUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           description: Cloudinary URL of license front image (optional)
+ *         licenseBackImageUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           description: Cloudinary URL of license back image (optional)
+ *         nameMatchScore:
+ *           type: number
+ *           description: Fuzzy match score vs identity data (0-100)
+ *           example: 92.5
+ *         dobMatch:
+ *           type: boolean
+ *           description: Whether DOB matches identity data exactly
+ *           example: true
+ *         verifiedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when license was verified
+ *           example: "2025-12-24T10:30:00.000Z"
+ *         ocrRawFront:
+ *           type: string
+ *           nullable: true
+ *           description: Raw OCR text from front image (for debugging)
+ *         ocrRawBack:
+ *           type: string
+ *           nullable: true
+ *           description: Raw OCR text from back image (for debugging)
  *     UserVerificationData:
  *       type: object
  *       description: User identity verification data returned by verification endpoints
@@ -402,7 +497,6 @@ const userSchema = new Schema<IUserDocument>(
 
     faydaId: {
       type: String,
-      sparse: true,
     },
     isIdentityVerified: {
       type: Boolean,
@@ -461,7 +555,6 @@ const userSchema = new Schema<IUserDocument>(
     passportData: {
       passportNumber: {
         type: String,
-        sparse: true,
       },
       nationality: {
         type: String,
@@ -502,6 +595,76 @@ const userSchema = new Schema<IUserDocument>(
         type: String,
       },
     },
+
+    isDrivingLicenseVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    licenseVerifiedAt: {
+      type: Date,
+    },
+
+    licenseData: {
+      licenseNumber: {
+        type: String,
+      },
+      fullName: {
+        type: String,
+      },
+      birthdate: {
+        type: String,
+      },
+      expiryDate: {
+        type: String,
+      },
+      issueDate: {
+        type: String,
+      },
+      licenseClass: {
+        type: [String],
+      },
+
+      bloodType: {
+        type: String,
+      },
+      nationality: {
+        type: String,
+      },
+
+      isInternationalLicense: {
+        type: Boolean,
+        default: false,
+      },
+      countryOfIssue: {
+        type: String,
+      },
+
+      licenseImageUrl: {
+        type: String,
+      },
+      licenseBackImageUrl: {
+        type: String,
+      },
+      verifiedAt: {
+        type: Date,
+        default: Date.now,
+      },
+
+      nameMatchScore: {
+        type: Number,
+      },
+      dobMatch: {
+        type: Boolean,
+      },
+
+      ocrRawFront: {
+        type: String,
+      },
+      ocrRawBack: {
+        type: String,
+      },
+    },
   },
   {
     timestamps: true,
@@ -527,6 +690,14 @@ userSchema.index(
   { 'passportData.passportNumber': 1 },
   { unique: true, sparse: true },
 );
+
+// License verification indexes
+userSchema.index(
+  { 'licenseData.licenseNumber': 1 },
+  { unique: true, sparse: true },
+);
+userSchema.index({ isDrivingLicenseVerified: 1 });
+userSchema.index({ licenseVerifiedAt: 1 });
 
 userSchema.index({
   firstName: 'text',

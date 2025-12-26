@@ -75,6 +75,12 @@ interface PassportConfig {
   imageQuality: number;
 }
 
+interface LicenseConfig {
+  maxFileSize: number;
+  nameMatchThreshold: number;
+  minValidityMonths: number;
+}
+
 export interface AppConfig {
   nodeEnv: 'development' | 'production' | 'test';
   isProduction: boolean;
@@ -96,4 +102,5 @@ export interface AppConfig {
   payment: PaymentConfig;
   fayda: FaydaConfig;
   passport: PassportConfig;
+  license: LicenseConfig;
 }

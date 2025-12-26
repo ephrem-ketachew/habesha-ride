@@ -47,6 +47,31 @@ export const passportVerificationLimiter = rateLimit({
   },
 });
 
+export const licenseVerificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message:
+    'Too many license verification attempts. Please try again in 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  handler: (req, res) => {
+    logger.warn(
+      {
+        ip: req.ip,
+        userId: req.user?.id || 'anonymous',
+        userAgent: req.get('user-agent'),
+      },
+      'License verification rate limit exceeded',
+    );
+    res.status(429).json({
+      status: 'fail',
+      message:
+        'Too many license verification attempts. Please wait 15 minutes before trying again. If you continue to have issues, please contact support.',
+    });
+  },
+});
+
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,

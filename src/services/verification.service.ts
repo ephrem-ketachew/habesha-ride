@@ -16,6 +16,8 @@ import {
 } from '../utils/fayda.util.js';
 import { verifyPassport, checkPassportExists } from './passport.service.js';
 import { PassportVerificationInput } from '../types/passport.types.js';
+import { verifyLicense, checkLicenseDuplicate } from './license.service.js';
+import { LicenseVerificationInput } from '../types/license.types.js';
 
 export const initiateFaydaVerification = async (userId: string) => {
   const user = await User.findById(userId);
@@ -326,9 +328,175 @@ export const handlePassportVerification = async (
   }
 };
 
+export const handleLicenseVerification = async (
+  userId: string,
+  input: LicenseVerificationInput,
+) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+
+  if (!user.isIdentityVerified) {
+    logger.warn(
+      { userId },
+      'Attempted license verification without identity verification',
+    );
+    throw new AppError(
+      'Please verify your identity (Fayda or Passport) before verifying your license. Go to Profile → Verification.',
+      403,
+    );
+  }
+
+  if (user.isDrivingLicenseVerified) {
+    logger.warn(
+      {
+        userId,
+        licenseNumber: user.licenseData?.licenseNumber,
+      },
+      'Attempted license verification on already verified user',
+    );
+    throw new AppError('Your driving license is already verified.', 400);
+  }
+
+  logger.info(
+    { userId, licenseType: input.licenseType },
+    'Starting license verification process',
+  );
+
+  try {
+    const verificationResult = await verifyLicense(input, userId);
+
+    if (!verificationResult.approved) {
+      logger.warn(
+        {
+          userId,
+          reason: verificationResult.reason,
+          validations: verificationResult.validations,
+        },
+        'License verification rejected',
+      );
+
+      return {
+        success: false,
+        approved: false,
+        reason: verificationResult.reason,
+        validations: verificationResult.validations,
+        matchingResult: verificationResult.matchingResult
+          ? {
+              nameMatchScore: verificationResult.matchingResult.nameMatchScore,
+              dobMatch: verificationResult.matchingResult.dobMatch,
+              identitySource: verificationResult.matchingResult.identitySource,
+            }
+          : undefined,
+      };
+    }
+
+    const licenseNumber = verificationResult.licenseData!.licenseNumber;
+    const licenseExists = await checkLicenseDuplicate(licenseNumber);
+
+    if (licenseExists) {
+      logger.warn(
+        {
+          userId,
+          licenseNumber,
+        },
+        'Attempted to use duplicate license number',
+      );
+      throw new AppError(
+        'This license is already registered in our system. Each license can only be used once.',
+        409,
+      );
+    }
+
+    user.isDrivingLicenseVerified = true;
+    user.licenseVerifiedAt = new Date();
+    user.licenseData = {
+      licenseNumber: verificationResult.licenseData!.licenseNumber,
+      fullName: verificationResult.licenseData!.fullName,
+      birthdate: verificationResult.licenseData!.birthdate,
+      expiryDate: verificationResult.licenseData!.expiryDate,
+      issueDate: verificationResult.licenseData!.issueDate,
+      licenseClass: verificationResult.licenseData!.licenseClass,
+      bloodType: verificationResult.licenseData!.bloodType,
+      nationality: verificationResult.licenseData!.nationality,
+      isInternationalLicense:
+        verificationResult.licenseData!.isInternationalLicense,
+      countryOfIssue: verificationResult.licenseData!.countryOfIssue,
+      nameMatchScore: verificationResult.matchingResult!.nameMatchScore,
+      dobMatch: verificationResult.matchingResult!.dobMatch,
+      ocrRawFront: verificationResult.licenseData!.ocrRawFront,
+      ocrRawBack: verificationResult.licenseData!.ocrRawBack,
+      verifiedAt: new Date(),
+    };
+
+    await user.save();
+
+    logger.info(
+      {
+        userId,
+        licenseNumber,
+        licenseClass: verificationResult.licenseData!.licenseClass.join(', '),
+        nameMatchScore:
+          verificationResult.matchingResult!.nameMatchScore.toFixed(2),
+      },
+      'License verification completed successfully',
+    );
+
+    return {
+      success: true,
+      approved: true,
+      message: 'License verified successfully',
+      user: {
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        isDrivingLicenseVerified: user.isDrivingLicenseVerified,
+        licenseVerifiedAt: user.licenseVerifiedAt,
+        licenseData: {
+          licenseNumber: user.licenseData!.licenseNumber,
+          fullName: user.licenseData!.fullName,
+          birthdate: user.licenseData!.birthdate,
+          expiryDate: user.licenseData!.expiryDate,
+          licenseClass: user.licenseData!.licenseClass,
+          nationality: user.licenseData!.nationality,
+          isInternationalLicense: user.licenseData!.isInternationalLicense,
+          countryOfIssue: user.licenseData!.countryOfIssue,
+          nameMatchScore: user.licenseData!.nameMatchScore,
+          dobMatch: user.licenseData!.dobMatch,
+          verifiedAt: user.licenseData!.verifiedAt,
+        },
+      },
+      validations: verificationResult.validations,
+      matchingResult: {
+        nameMatchScore: verificationResult.matchingResult!.nameMatchScore,
+        dobMatch: verificationResult.matchingResult!.dobMatch,
+        identitySource: verificationResult.matchingResult!.identitySource,
+      },
+    };
+  } catch (error: any) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    logger.error(
+      {
+        error: error.message,
+        stack: error.stack,
+        userId,
+      },
+      'Unexpected error during license verification',
+    );
+
+    throw new AppError(
+      'Failed to complete license verification. Please try again.',
+      500,
+    );
+  }
+};
+
 export const getVerificationStatus = async (userId: string) => {
   const user = await User.findById(userId).select(
-    '+faydaId +isIdentityVerified +identityVerifiedAt +identityVerificationMethod +faydaData +passportData',
+    '+faydaId +isIdentityVerified +identityVerifiedAt +identityVerificationMethod +faydaData +passportData +isDrivingLicenseVerified +licenseVerifiedAt +licenseData',
   );
 
   if (!user) {
@@ -363,6 +531,25 @@ export const getVerificationStatus = async (userId: string) => {
           verifiedAt: user.passportData.verifiedAt,
         }
       : null,
+    isDrivingLicenseVerified: user.isDrivingLicenseVerified || false,
+    licenseVerifiedAt: user.licenseVerifiedAt || null,
+    licenseData: user.licenseData
+      ? {
+          licenseNumber: user.licenseData.licenseNumber,
+          fullName: user.licenseData.fullName,
+          birthdate: user.licenseData.birthdate,
+          expiryDate: user.licenseData.expiryDate,
+          issueDate: user.licenseData.issueDate,
+          licenseClass: user.licenseData.licenseClass,
+          bloodType: user.licenseData.bloodType,
+          nationality: user.licenseData.nationality,
+          isInternationalLicense: user.licenseData.isInternationalLicense,
+          countryOfIssue: user.licenseData.countryOfIssue,
+          nameMatchScore: user.licenseData.nameMatchScore,
+          dobMatch: user.licenseData.dobMatch,
+          verifiedAt: user.licenseData.verifiedAt,
+        }
+      : null,
   };
 };
 
@@ -373,11 +560,12 @@ export const revokeVerification = async (userId: string) => {
     throw new AppError('User not found.', 404);
   }
 
-  if (!user.isIdentityVerified) {
-    throw new AppError('User is not verified.', 400);
+  if (!user.isIdentityVerified && !user.isDrivingLicenseVerified) {
+    throw new AppError('User has no active verifications to revoke.', 400);
   }
 
-  const previousMethod = user.identityVerificationMethod;
+  const previousIdentityMethod = user.identityVerificationMethod;
+  const hadLicenseVerified = user.isDrivingLicenseVerified;
 
   user.isIdentityVerified = false;
   user.identityVerifiedAt = undefined;
@@ -386,11 +574,32 @@ export const revokeVerification = async (userId: string) => {
   user.faydaData = undefined;
   user.passportData = undefined;
 
+  user.isDrivingLicenseVerified = false;
+  user.licenseVerifiedAt = undefined;
+  user.licenseData = undefined;
+
   await user.save();
 
-  logger.info({ userId, previousMethod }, 'Verification revoked by admin');
+  logger.info(
+    {
+      userId,
+      previousIdentityMethod,
+      hadLicenseVerified,
+    },
+    'Verification(s) revoked by admin',
+  );
+
+  const messages = [];
+  if (previousIdentityMethod) {
+    messages.push(
+      `${previousIdentityMethod === 'passport' ? 'Passport' : 'Fayda'} verification`,
+    );
+  }
+  if (hadLicenseVerified) {
+    messages.push('License verification');
+  }
 
   return {
-    message: `${previousMethod === 'passport' ? 'Passport' : 'Fayda'} verification revoked successfully`,
+    message: `${messages.join(' and ')} revoked successfully`,
   };
 };

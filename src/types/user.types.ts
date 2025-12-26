@@ -65,6 +65,34 @@ export interface IUser {
     verifiedAt?: Date;
     mrzRaw?: string;
   };
+
+  isDrivingLicenseVerified: boolean;
+  licenseVerifiedAt?: Date;
+
+  licenseData?: {
+    licenseNumber?: string;
+    fullName?: string;
+    birthdate?: string;
+    expiryDate?: string;
+    issueDate?: string;
+    licenseClass?: string[];
+
+    bloodType?: string;
+    nationality?: string;
+
+    isInternationalLicense?: boolean;
+    countryOfIssue?: string;
+
+    licenseImageUrl?: string;
+    licenseBackImageUrl?: string;
+    verifiedAt?: Date;
+
+    nameMatchScore?: number;
+    dobMatch?: boolean;
+
+    ocrRawFront?: string;
+    ocrRawBack?: string;
+  };
 }
 
 export interface PublicUserProfile {

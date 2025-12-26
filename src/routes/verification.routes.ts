@@ -5,20 +5,28 @@ import {
   getVerificationStatusHandler,
   revokeVerificationHandler,
   verifyPassportHandler,
+  verifyLicenseHandler,
 } from '../controllers/verification.controller.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
   faydaCallbackSchema,
   revokePassportVerificationParamsSchema,
+  licenseVerificationBodySchema,
+  revokeLicenseVerificationParamsSchema,
 } from '../validation/verification.schema.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { restrictTo } from '../middleware/auth.middleware.js';
 import {
   uploadPassportImages,
   validatePassportImages,
+  uploadLicenseImages,
+  validateLicenseImages,
   handleMulterError,
 } from '../utils/multer.util.js';
-import { passportVerificationLimiter } from '../middleware/rateLimiter.middleware.js';
+import {
+  passportVerificationLimiter,
+  licenseVerificationLimiter,
+} from '../middleware/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -262,6 +270,139 @@ router.post(
 
 /**
  * @swagger
+ * /verification/license:
+ *   post:
+ *     summary: Verify driver license
+ *     tags: [Verification]
+ *     description: |
+ *       Verifies driver license using OCR and matches with identity data.
+ *       **Prerequisites:** User must have completed identity verification (Fayda or Passport) first.
+ *
+ *       **Process:**
+ *       1. Upload license images (front required, back optional)
+ *       2. OCR extracts license data (number, name, DOB, expiry, classes)
+ *       3. Matches name (fuzzy ≥85%) and DOB (exact) with identity data
+ *       4. Validates expiry (must be valid for 3+ months)
+ *       5. Validates license class (B, C, D, or E required)
+ *       6. Automated approval if all validations pass
+ *
+ *       **Supported Licenses:**
+ *       - Ethiopian driver licenses (with Amharic text)
+ *       - International driving permits (IDP)
+ *       - Foreign driver licenses
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - frontImage
+ *               - licenseType
+ *             properties:
+ *               frontImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: Front of license (JPEG/PNG, max 5MB)
+ *               backImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: Back of license (optional, JPEG/PNG, max 5MB)
+ *               licenseType:
+ *                 type: string
+ *                 enum: [ethiopian, international]
+ *                 description: Type of license
+ *                 example: ethiopian
+ *     responses:
+ *       200:
+ *         description: Verification processed (check data.approved for result)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success, rejected]
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     approved:
+ *                       type: boolean
+ *                       example: true
+ *                     message:
+ *                       type: string
+ *                       example: License verified successfully
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         isDrivingLicenseVerified:
+ *                           type: boolean
+ *                           example: true
+ *                         licenseVerifiedAt:
+ *                           type: string
+ *                           format: date-time
+ *                         licenseData:
+ *                           $ref: '#/components/schemas/LicenseData'
+ *                     validations:
+ *                       type: object
+ *                       properties:
+ *                         ocrSuccess:
+ *                           type: boolean
+ *                         notExpired:
+ *                           type: boolean
+ *                         nameMatch:
+ *                           type: boolean
+ *                         dobMatch:
+ *                           type: boolean
+ *                         licenseClassValid:
+ *                           type: boolean
+ *                     matchingResult:
+ *                       type: object
+ *                       properties:
+ *                         nameMatchScore:
+ *                           type: number
+ *                           example: 95.5
+ *                         dobMatch:
+ *                           type: boolean
+ *                         identitySource:
+ *                           type: string
+ *                           enum: [fayda, passport]
+ *       400:
+ *         description: Invalid request (missing files, wrong format, already verified)
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Identity not verified (prerequisite)
+ *       409:
+ *         description: License already registered in the system
+ *       413:
+ *         description: File too large (max 5MB per image)
+ *       429:
+ *         description: Too many attempts (max 5 per 15 minutes)
+ *       500:
+ *         description: Server error (OCR API failed)
+ */
+router.post(
+  '/license',
+  licenseVerificationLimiter,
+  protect,
+  uploadLicenseImages,
+  validateLicenseImages,
+  validate(licenseVerificationBodySchema, 'body'),
+  verifyLicenseHandler,
+);
+
+/**
+ * @swagger
  * /verification/status:
  *   get:
  *     summary: Get verification status
@@ -368,6 +509,64 @@ router.delete(
   protect,
   restrictTo('admin', 'superadmin'),
   validate(revokePassportVerificationParamsSchema, 'params'),
+  revokeVerificationHandler,
+);
+
+/**
+ * @swagger
+ * /verification/license/{userId}:
+ *   delete:
+ *     summary: Revoke license verification (Admin only)
+ *     tags: [Verification]
+ *     description: |
+ *       Revokes license verification for a user. Clears all license data.
+ *       Admin/Superadmin only.
+ *
+ *       **Note:** This also revokes identity verification (Fayda/Passport) as license
+ *       requires identity as a prerequisite. User must re-verify identity before
+ *       verifying license again.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID to revoke license verification for
+ *     responses:
+ *       200:
+ *         description: License verification revoked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       examples:
+ *                         - License verification revoked successfully
+ *                         - Fayda and License verification revoked successfully
+ *       400:
+ *         description: User has no active verifications to revoke
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (Admin only)
+ *       404:
+ *         description: User not found
+ */
+router.delete(
+  '/license/:userId',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(revokeLicenseVerificationParamsSchema, 'params'),
   revokeVerificationHandler,
 );
 

@@ -20,6 +20,28 @@ export const revokePassportVerificationParamsSchema = z.object({
   userId: objectIdSchema,
 });
 
+export type RevokePassportVerificationParams = z.infer<
+  typeof revokePassportVerificationParamsSchema
+>;
+
+export const licenseVerificationBodySchema = z.object({
+  licenseType: z.enum(['ethiopian', 'international'], {
+    message:
+      'License type is required and must be either "ethiopian" or "international"',
+  }),
+});
+
+export const revokeLicenseVerificationParamsSchema = z.object({
+  userId: objectIdSchema,
+});
+
+export type LicenseVerificationBody = z.infer<
+  typeof licenseVerificationBodySchema
+>;
+export type RevokeLicenseVerificationParams = z.infer<
+  typeof revokeLicenseVerificationParamsSchema
+>;
+
 export const getVerificationStatusQuerySchema = z
   .object({
     includePassport: z
@@ -30,13 +52,14 @@ export const getVerificationStatusQuerySchema = z
       .string()
       .optional()
       .transform((val) => val === 'true'),
+    includeLicense: z
+      .string()
+      .optional()
+      .transform((val) => val === 'true'),
   })
   .strict()
   .optional();
 
-export type RevokePassportVerificationParams = z.infer<
-  typeof revokePassportVerificationParamsSchema
->;
 export type GetVerificationStatusQuery = z.infer<
   typeof getVerificationStatusQuerySchema
 >;

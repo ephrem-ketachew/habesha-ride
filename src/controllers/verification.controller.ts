@@ -5,6 +5,7 @@ import { FaydaCallbackInput } from '../validation/verification.schema.js';
 import config from '../config/env.config.js';
 import AppError from '../utils/appError.util.js';
 import { PassportVerificationInput } from '../types/passport.types.js';
+import { LicenseVerificationInput } from '../types/license.types.js';
 
 const verificationCookieOptions = {
   httpOnly: true,
@@ -147,6 +148,64 @@ export const verifyPassportHandler = catchAsync(
     };
 
     const result = await verificationService.handlePassportVerification(
+      userId,
+      input,
+    );
+
+    if (!result.success) {
+      return res.status(200).json({
+        status: 'rejected',
+        data: result,
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  },
+);
+
+export const verifyLicenseHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const { licenseType } = req.body;
+
+    if (!files?.frontImage) {
+      throw new AppError('Front image of license is required.', 400);
+    }
+
+    if (!licenseType) {
+      throw new AppError(
+        'License type is required. Must be "ethiopian" or "international".',
+        400,
+      );
+    }
+
+    const frontImage = files.frontImage[0];
+    const backImage = files.backImage ? files.backImage[0] : undefined;
+
+    const input: LicenseVerificationInput = {
+      frontImage: {
+        buffer: frontImage.buffer,
+        mimetype: frontImage.mimetype,
+        size: frontImage.size,
+        originalname: frontImage.originalname,
+      },
+      backImage: backImage
+        ? {
+            buffer: backImage.buffer,
+            mimetype: backImage.mimetype,
+            size: backImage.size,
+            originalname: backImage.originalname,
+          }
+        : undefined,
+      licenseType: licenseType as 'ethiopian' | 'international',
+    };
+
+    const result = await verificationService.handleLicenseVerification(
       userId,
       input,
     );

@@ -154,6 +154,16 @@ const config: AppConfig = {
     minAge: getEnvVarAsInt('PASSPORT_MIN_AGE', false, 18)!,
     imageQuality: getEnvVarAsInt('PASSPORT_IMAGE_QUALITY', false, 80)!,
   },
+
+  license: {
+    maxFileSize: getEnvVarAsInt('LICENSE_MAX_FILE_SIZE', false, 5242880)!,
+    nameMatchThreshold: getEnvVarAsInt(
+      'LICENSE_NAME_MATCH_THRESHOLD',
+      false,
+      85,
+    )!,
+    minValidityMonths: getEnvVarAsInt('LICENSE_MIN_VALIDITY_MONTHS', false, 3)!,
+  },
 };
 
 export default isProduction ? Object.freeze(config) : config;
