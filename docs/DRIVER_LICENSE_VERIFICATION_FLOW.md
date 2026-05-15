@@ -164,11 +164,13 @@ sequenceDiagram
 ### **Phase 1: Request Initiation**
 
 **Steps 1-2: User Upload**
+
 - User uploads license images (front required, back optional)
 - Frontend selects `licenseType`: `'ethiopian'` or `'international'`
 - Sends `multipart/form-data` request to `POST /api/v1/verification/license`
 
 **Request Format:**
+
 ```http
 POST /api/v1/verification/license
 Authorization: Bearer <jwt_token>
@@ -184,16 +186,19 @@ licenseType: "ethiopian" | "international"
 ### **Phase 2: Security & Validation Middleware**
 
 **Steps 3-4: JWT Authentication**
+
 - `auth.middleware.ts` validates JWT token
 - Extracts user ID from token payload
 - Ensures user is logged in
 
 **Steps 5-6: Rate Limiting**
+
 - `licenseVerificationLimiter` checks request count
 - **Limit:** 5 attempts per 15 minutes per IP
 - Prevents abuse and excessive OCR costs
 
 **Steps 7-8: File Upload Processing**
+
 - `uploadLicenseImages` Multer middleware processes files
 - **Validations:**
   - File types: JPEG, PNG only
@@ -203,6 +208,7 @@ licenseType: "ethiopian" | "international"
 - Stores files in memory as buffers
 
 **Steps 9-10: Schema Validation**
+
 - Zod schema validates `licenseType` field
 - Must be exactly `'ethiopian'` or `'international'`
 - Returns clear error if invalid
@@ -212,20 +218,23 @@ licenseType: "ethiopian" | "international"
 ### **Phase 3: Verification Service Orchestration**
 
 **Steps 11-13: User Document Retrieval**
+
 - `verification.service.ts` fetches user from database
 - Checks if user exists
 
 **Prerequisite Checks:**
 
 1. **Identity Verification Required**
+
    ```typescript
    if (!user.isIdentityVerified) {
      throw new AppError(
        'Please verify your identity (Fayda or Passport) before verifying your license.',
-       403
+       403,
      );
    }
    ```
+
    - User MUST complete Fayda OR Passport verification first
    - Ensures we have verified name and DOB to match against
 
@@ -235,6 +244,7 @@ licenseType: "ethiopian" | "international"
      throw new AppError('Your driving license is already verified.', 400);
    }
    ```
+
    - Prevents duplicate license verification attempts
 
 ---
@@ -242,6 +252,7 @@ licenseType: "ethiopian" | "international"
 ### **Phase 4: License Service - OCR Processing**
 
 **Steps 14-16: Image Preprocessing (Front)**
+
 - `license.service.ts` receives file buffers
 - Uses Sharp to optimize images:
   ```typescript
@@ -256,12 +267,14 @@ licenseType: "ethiopian" | "international"
 - Reduces OCR costs while maintaining accuracy
 
 **Steps 17-18: Google Vision OCR (Front)**
+
 - Sends optimized buffer to Google Cloud Vision API
 - Uses `TEXT_DETECTION` feature
 - Extracts all text from license front image
 - Returns raw OCR text with bounding boxes
 
 **Steps 19-22: Back Image Processing (Optional)**
+
 - If `backImage` provided, repeat preprocessing and OCR
 - Some licenses (e.g., international) have important data on back
 - Ethiopian licenses may have additional info on back
@@ -271,6 +284,7 @@ licenseType: "ethiopian" | "international"
 ### **Phase 5: License Data Parsing**
 
 **Ethiopian License Format:**
+
 ```typescript
 // Example extracted data:
 {
@@ -287,6 +301,7 @@ licenseType: "ethiopian" | "international"
 ```
 
 **International License Format:**
+
 ```typescript
 // Example extracted data:
 {
@@ -302,6 +317,7 @@ licenseType: "ethiopian" | "international"
 ```
 
 **Parsing Logic:**
+
 - Regex patterns for license numbers
 - Date format detection (DD/MM/YYYY vs ISO)
 - Name extraction (uppercase normalization)
@@ -314,11 +330,15 @@ licenseType: "ethiopian" | "international"
 ### **Phase 6: Identity Data Matching**
 
 **Steps 23-24: Fetch Verified Identity**
+
 ```typescript
 const identityData = user.isIdentityVerified
   ? user.identityVerificationMethod === 'fayda'
     ? { fullName: user.faydaData.fullName, birthdate: user.faydaData.birthdate }
-    : { fullName: user.passportData.fullName, birthdate: user.passportData.birthdate }
+    : {
+        fullName: user.passportData.fullName,
+        birthdate: user.passportData.birthdate,
+      }
   : null;
 ```
 
@@ -329,16 +349,21 @@ const identityData = user.isIdentityVerified
 **Steps 25-26: Levenshtein Distance Matching**
 
 Why fuzzy matching?
+
 - OCR may misread characters (e.g., "O" vs "0", "I" vs "l")
 - Name order variations (First Last vs Last First)
 - Middle name presence/absence
 - Spacing differences
 
 **Algorithm:**
+
 ```typescript
 import { ratio } from 'fuzzball';
 
-function fuzzyMatchName(licenseName: string, identityName: string): {
+function fuzzyMatchName(
+  licenseName: string,
+  identityName: string,
+): {
   match: boolean;
   score: number;
 } {
@@ -358,12 +383,13 @@ function fuzzyMatchName(licenseName: string, identityName: string): {
   // Threshold: 85% (configurable via LICENSE_NAME_MATCH_THRESHOLD)
   return {
     match: finalScore >= 85,
-    score: finalScore
+    score: finalScore,
   };
 }
 ```
 
 **Example Matches:**
+
 - "ABEBE KEBEDE" vs "ABEBE KEBEDE" → 100% ✅
 - "ABEBE KEBEDE" vs "KEBEDE ABEBE" → 100% ✅ (reversed)
 - "ABEBE KEBEDE" vs "ABEBE K3BEDE" → ~93% ✅ (OCR error)
@@ -374,56 +400,76 @@ function fuzzyMatchName(licenseName: string, identityName: string): {
 ### **Phase 8: Comprehensive Validations**
 
 **1. OCR Success**
+
 ```typescript
-ocrSuccess: !!parsedLicenseData.licenseNumber
+ocrSuccess: !!parsedLicenseData.licenseNumber;
 ```
+
 - Ensures license number was extracted
 
 **2. License Not Expired**
+
 ```typescript
-function validateLicenseExpiry(expiryDate: string, minValidityMonths: number): boolean {
+function validateLicenseExpiry(
+  expiryDate: string,
+  minValidityMonths: number,
+): boolean {
   const expiry = new Date(expiryDate);
   const now = new Date();
-  const monthsRemaining = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
+  const monthsRemaining =
+    (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
   return monthsRemaining >= minValidityMonths; // Default: 3 months
 }
 ```
+
 - License must be valid for at least 3 more months (configurable)
 - Prevents booking with soon-to-expire licenses
 
 **3. Name Match**
+
 ```typescript
-nameMatch: matchingResult.nameMatch  // >= 85% similarity
+nameMatch: matchingResult.nameMatch; // >= 85% similarity
 ```
 
 **4. DOB Exact Match**
+
 ```typescript
 function matchDOB(licenseDOB: string, identityDOB: string): boolean {
-  return new Date(licenseDOB).toISOString().split('T')[0] === 
-         new Date(identityDOB).toISOString().split('T')[0];
+  return (
+    new Date(licenseDOB).toISOString().split('T')[0] ===
+    new Date(identityDOB).toISOString().split('T')[0]
+  );
 }
 ```
+
 - Must be exact date match (no fuzzy logic for dates)
 
 **5. Valid License Class**
+
 ```typescript
 function validateLicenseClass(classes: string[]): boolean {
   const validClasses = ['B', 'C', 'D', 'E'];
-  return classes.length > 0 && classes.every(c => validClasses.includes(c.toUpperCase()));
+  return (
+    classes.length > 0 &&
+    classes.every((c) => validClasses.includes(c.toUpperCase()))
+  );
 }
 ```
+
 - Must have at least one valid class
 - Valid for standard vehicle categories
 
 **Approval Logic:**
+
 ```typescript
-const approved = 
+const approved =
   validations.ocrSuccess &&
   validations.notExpired &&
   validations.nameMatch &&
   validations.dobMatch &&
   validations.licenseClassValid;
 ```
+
 - ALL validations must pass for approval
 
 ---
@@ -431,6 +477,7 @@ const approved =
 ### **Phase 9: Rejection Handling**
 
 If any validation fails:
+
 ```json
 {
   "status": "rejected",
@@ -456,6 +503,7 @@ If any validation fails:
 ```
 
 **Common Rejection Reasons:**
+
 1. "Could not extract license number from the image"
 2. "License has expired or will expire within 3 months"
 3. "Name from license does not match verified identity (similarity: X%)"
@@ -467,10 +515,11 @@ If any validation fails:
 ### **Phase 10: Duplicate Prevention**
 
 **Steps 30-31: Duplicate License Check**
+
 ```typescript
 const licenseExists = await User.findOne({
   'licenseData.licenseNumber': licenseNumber,
-  _id: { $ne: userId }
+  _id: { $ne: userId },
 });
 ```
 
@@ -484,6 +533,7 @@ const licenseExists = await User.findOne({
 ### **Phase 11: Database Update**
 
 **Steps 32-33: User Document Update**
+
 ```typescript
 user.isDrivingLicenseVerified = true;
 user.licenseVerifiedAt = new Date();
@@ -502,15 +552,19 @@ user.licenseData = {
   dobMatch: matchingResult.dobMatch,
   ocrRawFront: parsedLicenseData.ocrRawFront,
   ocrRawBack: parsedLicenseData.ocrRawBack,
-  verifiedAt: new Date()
+  verifiedAt: new Date(),
 };
 
 await user.save();
 ```
 
 **Indexes Created:**
+
 ```typescript
-userSchema.index({ 'licenseData.licenseNumber': 1 }, { unique: true, sparse: true });
+userSchema.index(
+  { 'licenseData.licenseNumber': 1 },
+  { unique: true, sparse: true },
+);
 userSchema.index({ isDrivingLicenseVerified: 1 });
 userSchema.index({ licenseVerifiedAt: 1 });
 ```
@@ -520,6 +574,7 @@ userSchema.index({ licenseVerifiedAt: 1 });
 ### **Phase 12: Success Response**
 
 **Steps 34-35: Return Success**
+
 ```json
 {
   "status": "success",
@@ -572,6 +627,7 @@ userSchema.index({ licenseVerifiedAt: 1 });
 ## Architecture Highlights
 
 ### **1. Hybrid Intelligence Design**
+
 ```
 Google Cloud Vision (OCR)
     ↓
@@ -585,12 +641,14 @@ MongoDB Storage
 ```
 
 **Why Google Vision for OCR?**
+
 - Best-in-class text detection accuracy
 - Multi-language support (Amharic, English, Arabic)
 - Handles rotated/skewed images
 - Cost-effective for text extraction
 
 **Why Fuzzball for Matching?**
+
 - Handles OCR errors gracefully
 - Levenshtein distance algorithm (proven)
 - Configurable threshold
@@ -601,24 +659,26 @@ MongoDB Storage
 ### **2. Service Layer Architecture**
 
 **`license.service.ts` (Pure Business Logic)**
+
 ```typescript
 // Public API
-export const verifyLicense: (input, userId) => Promise<Result>
+export const verifyLicense: (input, userId) => Promise<Result>;
 
 // Internal helpers (not exported)
-function preprocessImage(buffer): Promise<Buffer>
-function extractLicenseText(buffer): Promise<string>
-function parseEthiopianLicense(text): ParsedData
-function parseInternationalLicense(text): ParsedData
-function fuzzyMatchName(name1, name2, threshold): { match, score }
-function matchDOB(dob1, dob2): boolean
-function validateLicenseExpiry(date, months): boolean
-function validateLicenseClass(classes): boolean
+function preprocessImage(buffer): Promise<Buffer>;
+function extractLicenseText(buffer): Promise<string>;
+function parseEthiopianLicense(text): ParsedData;
+function parseInternationalLicense(text): ParsedData;
+function fuzzyMatchName(name1, name2, threshold): { match; score };
+function matchDOB(dob1, dob2): boolean;
+function validateLicenseExpiry(date, months): boolean;
+function validateLicenseClass(classes): boolean;
 ```
 
 **`verification.service.ts` (Orchestration Layer)**
+
 ```typescript
-export const handleLicenseVerification: (userId, input) => Promise<Response>
+export const handleLicenseVerification: (userId, input) => Promise<Response>;
 // - Prerequisite checks (identity verified)
 // - Duplicate prevention
 // - Database updates
@@ -630,17 +690,19 @@ export const handleLicenseVerification: (userId, input) => Promise<Response>
 ### **3. Rate Limiting Strategy**
 
 **License Verification Limiter:**
+
 ```typescript
 export const licenseVerificationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,                    // 5 attempts per window
+  max: 5, // 5 attempts per window
   message: 'Too many license verification attempts. Please try again later.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 ```
 
 **Rationale:**
+
 - OCR is expensive (Google Vision API costs)
 - Prevents abuse/spam
 - Allows legitimate retries (bad photo quality)
@@ -652,61 +714,68 @@ export const licenseVerificationLimiter = rateLimit({
 
 **15 Error Scenarios Handled:**
 
-| Error Code | Scenario | Message |
-|------------|----------|---------|
-| 401 | No auth token | "Authentication required" |
-| 401 | Invalid token | "Invalid or expired token" |
-| 403 | Identity not verified | "Please verify your identity (Fayda or Passport) before verifying your license." |
-| 400 | Already verified | "Your driving license is already verified." |
-| 400 | No front image | "Front image of license is required." |
-| 400 | Invalid file type | "Only JPEG and PNG images are allowed." |
-| 413 | File too large | "Image size exceeds 5MB limit." |
-| 400 | Invalid license type | "License type must be 'ethiopian' or 'international'" |
-| 500 | Google Vision error | "Failed to process license image. Please try again." |
-| 200 | OCR failed | "Could not extract license number from the image" (rejected) |
-| 200 | Expired | "License has expired or will expire within 3 months" (rejected) |
-| 200 | Name mismatch | "Name from license does not match verified identity (similarity: X%)" (rejected) |
-| 200 | DOB mismatch | "Date of birth from license does not match verified identity" (rejected) |
-| 200 | Invalid class | "License class is not valid for car bookings" (rejected) |
-| 409 | Duplicate license | "This license is already registered in our system. Each license can only be used once." |
-| 429 | Rate limit | "Too many license verification attempts. Please try again later." |
+| Error Code | Scenario              | Message                                                                                 |
+| ---------- | --------------------- | --------------------------------------------------------------------------------------- |
+| 401        | No auth token         | "Authentication required"                                                               |
+| 401        | Invalid token         | "Invalid or expired token"                                                              |
+| 403        | Identity not verified | "Please verify your identity (Fayda or Passport) before verifying your license."        |
+| 400        | Already verified      | "Your driving license is already verified."                                             |
+| 400        | No front image        | "Front image of license is required."                                                   |
+| 400        | Invalid file type     | "Only JPEG and PNG images are allowed."                                                 |
+| 413        | File too large        | "Image size exceeds 5MB limit."                                                         |
+| 400        | Invalid license type  | "License type must be 'ethiopian' or 'international'"                                   |
+| 500        | Google Vision error   | "Failed to process license image. Please try again."                                    |
+| 200        | OCR failed            | "Could not extract license number from the image" (rejected)                            |
+| 200        | Expired               | "License has expired or will expire within 3 months" (rejected)                         |
+| 200        | Name mismatch         | "Name from license does not match verified identity (similarity: X%)" (rejected)        |
+| 200        | DOB mismatch          | "Date of birth from license does not match verified identity" (rejected)                |
+| 200        | Invalid class         | "License class is not valid for car bookings" (rejected)                                |
+| 409        | Duplicate license     | "This license is already registered in our system. Each license can only be used once." |
+| 429        | Rate limit            | "Too many license verification attempts. Please try again later."                       |
 
 ---
 
 ## Security Features
 
 ### **1. JWT Authentication**
+
 - Every request requires valid JWT token
 - Token contains user ID for authorization
 - Short-lived tokens (configurable expiry)
 
 ### **2. Rate Limiting**
+
 - 5 attempts per 15 minutes per IP
 - Prevents brute force OCR attempts
 - Reduces API costs
 
 ### **3. File Validation**
+
 - Whitelist: JPEG, PNG only
 - Max size: 5MB per file
 - Stored in memory (not disk) for security
 - Buffers cleared after processing
 
 ### **4. Duplicate Prevention**
+
 - Unique index on `licenseData.licenseNumber`
 - Database-level constraint
 - Prevents one license across multiple accounts
 
 ### **5. Prerequisite Enforcement**
+
 - Must complete identity verification first
 - Ensures we have verified data to match against
 - Creates audit trail (Fayda/Passport → License)
 
 ### **6. Input Validation**
+
 - Zod schemas for type safety
 - Enum validation for `licenseType`
 - ObjectId validation for admin operations
 
 ### **7. Raw OCR Storage**
+
 - Stores `ocrRawFront` and `ocrRawBack`
 - Audit trail for disputes
 - Manual review capability
@@ -767,25 +836,25 @@ interface IUser extends Document {
   // ... existing fields ...
 
   // Driver's License Verification
-  isDrivingLicenseVerified: boolean;  // Default: false
+  isDrivingLicenseVerified: boolean; // Default: false
   licenseVerifiedAt?: Date;
   licenseData?: {
-    licenseNumber: string;           // Unique, indexed
+    licenseNumber: string; // Unique, indexed
     fullName: string;
-    birthdate: string;               // YYYY-MM-DD
+    birthdate: string; // YYYY-MM-DD
     expiryDate: string;
     issueDate?: string;
-    licenseClass: string[];          // ['B', 'C', etc.]
-    bloodType?: string;              // Ethiopian licenses
-    nationality: string;             // Country code
+    licenseClass: string[]; // ['B', 'C', etc.]
+    bloodType?: string; // Ethiopian licenses
+    nationality: string; // Country code
     isInternationalLicense: boolean;
     countryOfIssue: string;
-    licenseImageUrl?: string;        // S3 URL (future)
-    licenseBackImageUrl?: string;    // S3 URL (future)
+    licenseImageUrl?: string; // S3 URL (future)
+    licenseBackImageUrl?: string; // S3 URL (future)
     verifiedAt: Date;
-    nameMatchScore?: number;         // 0-100
+    nameMatchScore?: number; // 0-100
     dobMatch: boolean;
-    ocrRawFront: string;             // Raw OCR for audit
+    ocrRawFront: string; // Raw OCR for audit
     ocrRawBack?: string;
   };
 }
@@ -795,7 +864,10 @@ interface IUser extends Document {
 
 ```typescript
 // Unique license number (sparse: allows null)
-userSchema.index({ 'licenseData.licenseNumber': 1 }, { unique: true, sparse: true });
+userSchema.index(
+  { 'licenseData.licenseNumber': 1 },
+  { unique: true, sparse: true },
+);
 
 // Query by verification status
 userSchema.index({ isDrivingLicenseVerified: 1 });
@@ -821,6 +893,7 @@ licenseType: "ethiopian" | "international"
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "status": "success",
@@ -828,14 +901,21 @@ licenseType: "ethiopian" | "international"
     "success": true,
     "approved": true,
     "message": "License verified successfully",
-    "user": { /* ... user data ... */ },
-    "validations": { /* ... validation results ... */ },
-    "matchingResult": { /* ... matching details ... */ }
+    "user": {
+      /* ... user data ... */
+    },
+    "validations": {
+      /* ... validation results ... */
+    },
+    "matchingResult": {
+      /* ... matching details ... */
+    }
   }
 }
 ```
 
 **Rejection Response (200 OK):**
+
 ```json
 {
   "status": "rejected",
@@ -843,8 +923,12 @@ licenseType: "ethiopian" | "international"
     "success": false,
     "approved": false,
     "reason": "Name from license does not match verified identity (similarity: 42%)",
-    "validations": { /* ... validation results ... */ },
-    "matchingResult": { /* ... matching details ... */ }
+    "validations": {
+      /* ... validation results ... */
+    },
+    "matchingResult": {
+      /* ... matching details ... */
+    }
   }
 }
 ```
@@ -859,6 +943,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "success",
@@ -869,7 +954,9 @@ Authorization: Bearer <jwt_token>
     "identityVerifiedAt": "2025-12-20T10:00:00.000Z",
     "isDrivingLicenseVerified": true,
     "licenseVerifiedAt": "2025-12-25T14:30:00.000Z",
-    "licenseData": { /* ... license details ... */ }
+    "licenseData": {
+      /* ... license details ... */
+    }
   }
 }
 ```
@@ -884,6 +971,7 @@ Authorization: Bearer <admin_jwt_token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "success",
@@ -892,6 +980,7 @@ Authorization: Bearer <admin_jwt_token>
 ```
 
 **Notes:**
+
 - Clears `isDrivingLicenseVerified`, `licenseVerifiedAt`, `licenseData`
 - Also clears identity verification data (Fayda/Passport)
 - Requires `admin` or `superadmin` role
@@ -966,7 +1055,7 @@ function LicenseVerification() {
         redirectTo('/dashboard');
       } else if (result.status === 'rejected') {
         showError(`Verification failed: ${result.data.reason}`);
-        
+
         // Show which validations failed
         const { validations } = result.data;
         if (!validations.nameMatch) {
@@ -1072,6 +1161,7 @@ function ProfilePage() {
 ### **Unit Tests**
 
 **Test Name Matching:**
+
 ```typescript
 describe('fuzzyMatchName', () => {
   it('should match identical names', () => {
@@ -1101,6 +1191,7 @@ describe('fuzzyMatchName', () => {
 ```
 
 **Test Date Validation:**
+
 ```typescript
 describe('validateLicenseExpiry', () => {
   it('should accept license expiring in 6 months', () => {
@@ -1127,6 +1218,7 @@ describe('validateLicenseExpiry', () => {
 ### **Integration Tests**
 
 **Test End-to-End Flow:**
+
 ```typescript
 describe('POST /api/v1/verification/license', () => {
   let authToken: string;
@@ -1193,7 +1285,8 @@ describe('POST /api/v1/verification/license', () => {
 
   it('should reject license with name mismatch', async () => {
     // Mock OCR to return different name
-    jest.spyOn(licenseService, 'extractLicenseText')
+    jest
+      .spyOn(licenseService, 'extractLicenseText')
       .mockResolvedValue('License text with DIFFERENT NAME...');
 
     const response = await request(app)
@@ -1214,11 +1307,11 @@ describe('POST /api/v1/verification/license', () => {
         .post('/api/v1/verification/license')
         .set('Authorization', `Bearer ${authToken}`)
         .attach('frontImage', 'test/fixtures/license-front.jpg')
-        .field('licenseType', 'ethiopian')
+        .field('licenseType', 'ethiopian'),
     );
 
     const responses = await Promise.all(promises);
-    const rateLimited = responses.some(r => r.status === 429);
+    const rateLimited = responses.some((r) => r.status === 429);
     expect(rateLimited).toBe(true);
   });
 });
@@ -1284,12 +1377,14 @@ curl -X DELETE \
 ```
 
 **Use Cases:**
+
 - Fraud detection
 - Incorrect verification
 - User request
 - License expiration
 
 **Effect:**
+
 - Clears `isDrivingLicenseVerified`, `licenseVerifiedAt`, `licenseData`
 - Also clears identity verification (Fayda/Passport)
 - User must re-verify from scratch
@@ -1308,18 +1403,18 @@ threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
 
 db.users.find({
   isDrivingLicenseVerified: true,
-  'licenseData.expiryDate': { $lt: threeMonthsFromNow.toISOString() }
+  'licenseData.expiryDate': { $lt: threeMonthsFromNow.toISOString() },
 });
 
 // Find users by license class
 db.users.find({
-  'licenseData.licenseClass': 'C'
+  'licenseData.licenseClass': 'C',
 });
 
 // Find duplicate license attempts (should be empty due to unique index)
 db.users.aggregate([
   { $group: { _id: '$licenseData.licenseNumber', count: { $sum: 1 } } },
-  { $match: { count: { $gt: 1 } } }
+  { $match: { count: { $gt: 1 } } },
 ]);
 ```
 
@@ -1327,19 +1422,19 @@ db.users.aggregate([
 
 ## Comparison: Fayda vs Passport vs License
 
-| Feature | Fayda (OIDC) | Passport (OCR+Biometric) | License (OCR+Matching) |
-|---------|--------------|--------------------------|------------------------|
-| **Provider** | Ethiopian Gov't | Google Vision + AWS Rekognition | Google Vision + Fuzzball |
-| **Primary Use** | Identity verification (locals) | Identity verification (foreigners) | Legal compliance for bookings |
-| **Required For** | All Ethiopian users | Non-Ethiopian users | All car bookings |
-| **Prerequisite** | None | None | Identity verification (Fayda OR Passport) |
-| **Data Extracted** | Name, DOB, ID, Photo | Name, DOB, Passport#, Nationality | License#, Name, DOB, Classes, Expiry |
-| **Matching Logic** | Government-verified (authoritative) | Face comparison (98% threshold) | Fuzzy name + exact DOB |
-| **Duplicate Prevention** | Yes (faydaId unique) | Yes (passportNumber unique) | Yes (licenseNumber unique) |
-| **Rate Limit** | 3 attempts / 15 min | 3 attempts / 15 min | 5 attempts / 15 min |
-| **Cost per Verification** | Free (OIDC) | ~$0.005 (OCR + Rekognition) | ~$0.0015 (OCR only) |
-| **Success Rate** | ~99% (government API) | ~85% (OCR+lighting dependent) | ~90% (OCR dependent) |
-| **User Effort** | Redirect + login | Photo upload | Photo upload |
+| Feature                   | Fayda (OIDC)                        | Passport (OCR+Biometric)           | License (OCR+Matching)                    |
+| ------------------------- | ----------------------------------- | ---------------------------------- | ----------------------------------------- |
+| **Provider**              | Ethiopian Gov't                     | Google Vision + AWS Rekognition    | Google Vision + Fuzzball                  |
+| **Primary Use**           | Identity verification (locals)      | Identity verification (foreigners) | Legal compliance for bookings             |
+| **Required For**          | All Ethiopian users                 | Non-Ethiopian users                | All car bookings                          |
+| **Prerequisite**          | None                                | None                               | Identity verification (Fayda OR Passport) |
+| **Data Extracted**        | Name, DOB, ID, Photo                | Name, DOB, Passport#, Nationality  | License#, Name, DOB, Classes, Expiry      |
+| **Matching Logic**        | Government-verified (authoritative) | Face comparison (98% threshold)    | Fuzzy name + exact DOB                    |
+| **Duplicate Prevention**  | Yes (faydaId unique)                | Yes (passportNumber unique)        | Yes (licenseNumber unique)                |
+| **Rate Limit**            | 3 attempts / 15 min                 | 3 attempts / 15 min                | 5 attempts / 15 min                       |
+| **Cost per Verification** | Free (OIDC)                         | ~$0.005 (OCR + Rekognition)        | ~$0.0015 (OCR only)                       |
+| **Success Rate**          | ~99% (government API)               | ~85% (OCR+lighting dependent)      | ~90% (OCR dependent)                      |
+| **User Effort**           | Redirect + login                    | Photo upload                       | Photo upload                              |
 
 ---
 
@@ -1358,13 +1453,14 @@ db.users.aggregate([
 
 ### **Monthly Cost Estimation**
 
-| Verification Volume | Monthly Cost (OCR) | Notes |
-|---------------------|-------------------|-------|
-| 1,000 verifications | $1.50 | Early stage |
-| 10,000 verifications | $15.00 | Growth stage |
-| 100,000 verifications | $150.00 | High scale |
+| Verification Volume   | Monthly Cost (OCR) | Notes        |
+| --------------------- | ------------------ | ------------ |
+| 1,000 verifications   | $1.50              | Early stage  |
+| 10,000 verifications  | $15.00             | Growth stage |
+| 100,000 verifications | $150.00            | High scale   |
 
 **Cost Optimization:**
+
 - Sharp preprocessing reduces image size → fewer API costs
 - Fuzzy matching done locally (no API calls)
 - Rate limiting prevents abuse
@@ -1377,11 +1473,13 @@ db.users.aggregate([
 ### **Issue: "Could not extract license number from the image"**
 
 **Possible Causes:**
+
 1. Image quality too poor (blurry, dark, glare)
 2. License format not recognized
 3. Damage/wear on physical license
 
 **Solutions:**
+
 - Ask user to retake photo in good lighting
 - Ensure license is flat (no folds/curves)
 - Try higher resolution camera
@@ -1392,12 +1490,14 @@ db.users.aggregate([
 ### **Issue: "Name from license does not match verified identity"**
 
 **Possible Causes:**
+
 1. Different name format (First Last vs Last First)
 2. Middle name included/excluded
 3. OCR misread characters
 4. User uploaded someone else's license (fraud)
 
 **Solutions:**
+
 - Check `nameMatchScore` in response
 - If score is 70-84%, may be OCR error
 - Manual review for borderline cases
@@ -1408,9 +1508,11 @@ db.users.aggregate([
 ### **Issue: Rate Limit Exceeded**
 
 **Cause:**
+
 - User making too many attempts (5 in 15 minutes)
 
 **Solution:**
+
 - Wait 15 minutes for window reset
 - Educate user on proper photo technique
 - Consider manual review for legitimate cases
@@ -1420,9 +1522,11 @@ db.users.aggregate([
 ### **Issue: "License has expired or will expire within 3 months"**
 
 **Cause:**
+
 - License expiry date too soon
 
 **Solutions:**
+
 - User must renew license first
 - Contact admin if parsing error
 - Check `expiryDate` in raw OCR data
@@ -1432,12 +1536,14 @@ db.users.aggregate([
 ### **Issue: Google Vision API Error**
 
 **Possible Causes:**
+
 1. API key invalid/expired
 2. Quota exceeded
 3. Network issues
 4. Image format unsupported
 
 **Solutions:**
+
 - Check `GOOGLE_APPLICATION_CREDENTIALS` env var
 - Verify Google Cloud project billing
 - Check API quotas in GCP console
@@ -1448,7 +1554,9 @@ db.users.aggregate([
 ## Future Enhancements
 
 ### **1. Image Storage (S3)**
+
 Currently, images are not persisted. Future enhancement:
+
 ```typescript
 // Upload to S3 and store URLs
 licenseData.licenseImageUrl = await uploadToS3(frontImage);
@@ -1456,7 +1564,9 @@ licenseData.licenseBackImageUrl = await uploadToS3(backImage);
 ```
 
 ### **2. Manual Review Queue**
+
 For borderline cases (nameMatchScore 70-84%):
+
 ```typescript
 if (nameMatchScore >= 70 && nameMatchScore < 85) {
   // Add to manual review queue
@@ -1464,31 +1574,33 @@ if (nameMatchScore >= 70 && nameMatchScore < 85) {
     userId,
     licenseData,
     matchingResult,
-    status: 'pending_review'
+    status: 'pending_review',
   });
 }
 ```
 
 ### **3. License Expiry Notifications**
+
 Send reminder emails when license expiring soon:
+
 ```typescript
 // Cron job to check expiring licenses
 async function checkExpiringLicenses() {
   const twoMonthsFromNow = addMonths(new Date(), 2);
-  
+
   const users = await User.find({
     isDrivingLicenseVerified: true,
     'licenseData.expiryDate': { $lt: twoMonthsFromNow },
-    'licenseData.expiryNotificationSent': { $ne: true }
+    'licenseData.expiryNotificationSent': { $ne: true },
   });
 
   for (const user of users) {
     await sendEmail({
       to: user.email,
       subject: 'Your license is expiring soon',
-      body: `Please renew your license before ${user.licenseData.expiryDate}`
+      body: `Please renew your license before ${user.licenseData.expiryDate}`,
     });
-    
+
     user.licenseData.expiryNotificationSent = true;
     await user.save();
   }
@@ -1496,19 +1608,23 @@ async function checkExpiringLicenses() {
 ```
 
 ### **4. International License Support**
+
 Expand parsing for more countries:
+
 - US state licenses (all 50 states)
 - EU licenses (standardized format)
 - GCC licenses (Saudi, UAE, etc.)
 - UK licenses
 
 ### **5. OCR Confidence Scores**
+
 Google Vision returns confidence scores for each text block:
+
 ```typescript
 interface OCRResult {
   text: string;
   confidence: number; // 0-1
-  boundingBox: { x, y, width, height };
+  boundingBox: { x; y; width; height };
 }
 
 // Use confidence to flag low-quality extractions
@@ -1519,7 +1635,9 @@ if (ocrResult.confidence < 0.8) {
 ```
 
 ### **6. License Class Restrictions**
+
 Restrict certain vehicle types to specific classes:
+
 ```typescript
 // In booking validation
 if (car.type === 'truck' && !user.licenseData.licenseClass.includes('C')) {
@@ -1532,25 +1650,31 @@ if (car.type === 'bus' && !user.licenseData.licenseClass.includes('D')) {
 ```
 
 ### **7. Biometric Selfie Match**
+
 Add selfie comparison like passport verification:
+
 ```typescript
 // Compare license photo with selfie
 const faceMatch = await compareWithAWSRekognition(
   licenseFacePhoto,
   userSelfie,
-  90 // threshold
+  90, // threshold
 );
 ```
 
 ### **8. Blockchain Verification Record**
+
 Store verification hash on blockchain for immutability:
+
 ```typescript
-const verificationHash = sha256(JSON.stringify({
-  userId,
-  licenseNumber,
-  verifiedAt,
-  nameMatchScore
-}));
+const verificationHash = sha256(
+  JSON.stringify({
+    userId,
+    licenseNumber,
+    verifiedAt,
+    nameMatchScore,
+  }),
+);
 
 await storeOnBlockchain(verificationHash);
 ```
@@ -1562,6 +1686,7 @@ await storeOnBlockchain(verificationHash);
 ### **For Developers**
 
 1. **Never skip prerequisite checks**
+
    ```typescript
    // Always verify identity first
    if (!user.isIdentityVerified) {
@@ -1570,22 +1695,28 @@ await storeOnBlockchain(verificationHash);
    ```
 
 2. **Always store raw OCR data**
+
    ```typescript
    licenseData.ocrRawFront = fullTextAnnotation;
    // Enables manual review and debugging
    ```
 
 3. **Log extensively for debugging**
+
    ```typescript
-   logger.info({
-     userId,
-     licenseNumber,
-     nameMatchScore: matchingResult.nameMatchScore.toFixed(2),
-     dobMatch: matchingResult.dobMatch
-   }, 'License verification completed');
+   logger.info(
+     {
+       userId,
+       licenseNumber,
+       nameMatchScore: matchingResult.nameMatchScore.toFixed(2),
+       dobMatch: matchingResult.dobMatch,
+     },
+     'License verification completed',
+   );
    ```
 
 4. **Handle OCR variability gracefully**
+
    ```typescript
    // Fuzzy matching compensates for OCR errors
    // Don't use exact string matching for names
@@ -1628,11 +1759,13 @@ await storeOnBlockchain(verificationHash);
 ## Dependencies
 
 ### **External Services**
+
 - **Google Cloud Vision API** (OCR)
   - Setup: Create GCP project, enable Vision API, download service account key
   - Docs: https://cloud.google.com/vision/docs
 
 ### **NPM Packages**
+
 - **fuzzball** (Levenshtein distance)
   - Docs: https://github.com/nol13/fuzzball.js
 - **sharp** (Image processing)
@@ -1643,6 +1776,7 @@ await storeOnBlockchain(verificationHash);
   - Docs: https://zod.dev
 
 ### **Internal Services**
+
 - **verification.service.ts** (Orchestration)
 - **user.model.ts** (Database schema)
 - **auth.middleware.ts** (JWT authentication)
@@ -1653,18 +1787,21 @@ await storeOnBlockchain(verificationHash);
 ## Success Metrics
 
 ### **Technical Metrics**
+
 - OCR success rate: Target 95%
 - Name matching accuracy: Target 90%
 - API response time: < 3 seconds
 - Error rate: < 5%
 
 ### **Business Metrics**
+
 - License verification completion rate: Target 85%
 - Rejection rate: Target < 15%
 - Manual review rate: Target < 5%
 - Fraud detection rate: Track duplicates
 
 ### **Cost Metrics**
+
 - Average cost per verification: ~$0.0015
 - Failed verification rate: Track for optimization
 - API quota utilization: Monitor limits
@@ -1676,6 +1813,7 @@ await storeOnBlockchain(verificationHash);
 The Driver's License Verification system provides a robust, cost-effective solution for legal compliance in car bookings. By leveraging Google Cloud Vision OCR and fuzzy name matching, the system handles OCR variability while maintaining high accuracy. The prerequisite enforcement (identity verification first) creates a secure, auditable verification chain from identity to license.
 
 **Key Strengths:**
+
 - ✅ Handles OCR errors gracefully (fuzzy matching)
 - ✅ Cost-effective ($0.0015 per verification)
 - ✅ Secure prerequisite enforcement
@@ -1684,6 +1822,7 @@ The Driver's License Verification system provides a robust, cost-effective solut
 - ✅ Ethiopian & International support
 
 **Next Steps:**
+
 1. Test with real Ethiopian licenses
 2. Tune fuzzy matching threshold if needed
 3. Implement booking flow integration
@@ -1695,4 +1834,3 @@ The Driver's License Verification system provides a robust, cost-effective solut
 **Document Version:** 1.0  
 **Last Updated:** December 25, 2025  
 **Maintained By:** Habesha Ride Backend Team
-

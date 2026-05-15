@@ -9,6 +9,7 @@ The API documentation is fully integrated using Swagger/OpenAPI 3.0. It provides
 ## Accessing the Documentation
 
 ### Local Development
+
 When running the application locally, access the Swagger documentation at:
 
 ```
@@ -16,6 +17,7 @@ http://localhost:3000/api-docs
 ```
 
 ### Production
+
 The production API documentation is available at:
 
 ```
@@ -25,14 +27,17 @@ https://habesha-ride-backend.onrender.com/api-docs
 ## Features
 
 ### 1. Interactive API Explorer
+
 - Browse all available endpoints organized by tags
 - View request/response schemas
 - Test endpoints directly from the browser
 
 ### 2. Authentication
+
 The API uses cookie-based authentication with JWT tokens. The Swagger UI is configured to handle the `jwt` cookie automatically.
 
 To authenticate:
+
 1. Use the `/api/v1/auth/login` or `/api/v1/auth/register` endpoint
 2. The JWT token will be set as an httpOnly cookie
 3. Subsequent requests will automatically include the authentication cookie
@@ -40,6 +45,7 @@ To authenticate:
 ### 3. Available API Categories
 
 #### Authentication
+
 - User registration and login
 - Email verification
 - Password reset and update
@@ -47,29 +53,35 @@ To authenticate:
 - Session management
 
 #### Users
+
 - User profile management
 - Profile updates
 
 #### Cars
+
 - Car listing management (CRUD operations)
 - File upload support for car photos
 - Car verification status
 
 #### Rentals
+
 - Rental listing creation and management
 - Public rental listings with filtering
 - Owner-specific rental management
 
 #### Sales
+
 - Sale listing creation and management
 - Public sale listings with filtering
 - Vehicle condition tracking
 
 #### Makes & Models
+
 - Car brand (make) listing
 - Car model listing by make
 
 #### Admin
+
 - User management
 - Car verification
 - Listing management
@@ -78,11 +90,13 @@ To authenticate:
 ## API Base URLs
 
 ### Development
+
 ```
 http://localhost:3000/api/v1
 ```
 
 ### Production
+
 ```
 https://habesha-ride-backend.onrender.com/api/v1
 ```
@@ -90,6 +104,7 @@ https://habesha-ride-backend.onrender.com/api/v1
 ## Schema Definitions
 
 All schemas are documented in the Swagger UI and include:
+
 - **User** - User account information
 - **Car** - Car details with photos and location
 - **RentalListing** - Rental listing with pricing and availability
@@ -100,6 +115,7 @@ All schemas are documented in the Swagger UI and include:
 ## Testing Endpoints
 
 ### Using Swagger UI
+
 1. Navigate to the API documentation URL
 2. Expand an endpoint to view details
 3. Click "Try it out"
@@ -108,6 +124,7 @@ All schemas are documented in the Swagger UI and include:
 6. View the response below
 
 ### Authentication Flow for Testing
+
 1. Register a new account: `POST /api/v1/auth/register`
 2. Verify email using the token sent (check logs in development)
 3. Login: `POST /api/v1/auth/login`
@@ -118,6 +135,7 @@ All schemas are documented in the Swagger UI and include:
 All API responses follow a consistent format:
 
 ### Success Response
+
 ```json
 {
   "status": "success",
@@ -128,6 +146,7 @@ All API responses follow a consistent format:
 ```
 
 ### Error Response
+
 ```json
 {
   "status": "error",
@@ -138,6 +157,7 @@ All API responses follow a consistent format:
 ## Request Examples
 
 ### Register User
+
 ```bash
 POST /api/v1/auth/register
 Content-Type: application/json
@@ -153,6 +173,7 @@ Content-Type: application/json
 ```
 
 ### Create Rental Listing
+
 ```bash
 POST /api/v1/listings/rent
 Content-Type: application/json
@@ -170,6 +191,7 @@ Cookie: jwt=<token>
 ## File Upload Endpoints
 
 ### Create Car with Photos
+
 The car creation endpoint supports multipart/form-data for uploading photos:
 
 ```bash
@@ -187,12 +209,16 @@ Cookie: jwt=<token>
 ## Query Parameters
 
 ### Pagination
+
 Most list endpoints support pagination:
+
 - `page` (default: 1)
 - `limit` (default: 20)
 
 ### Filtering
+
 List endpoints support various filters:
+
 - `status` - Filter by status
 - `city` - Filter by city
 - `make` - Filter by make ID
@@ -202,12 +228,14 @@ List endpoints support various filters:
 ## Security
 
 ### Cookie-Based Authentication
+
 - **Type**: API Key
 - **Location**: Cookie
 - **Name**: `jwt`
 - **Description**: JWT token stored in httpOnly cookie
 
 ### Best Practices
+
 1. Always use HTTPS in production
 2. Tokens expire after 90 days
 3. Logout clears the authentication cookie
@@ -216,6 +244,7 @@ List endpoints support various filters:
 ## Development Notes
 
 ### Adding New Endpoints
+
 When adding new endpoints, follow this pattern:
 
 ```typescript
@@ -246,6 +275,7 @@ router.get('/your-endpoint', yourHandler);
 ```
 
 ### Adding New Schemas
+
 Add schema definitions in model files:
 
 ```typescript
@@ -277,16 +307,19 @@ The Swagger configuration is located in `src/config/swagger.ts`. To modify:
 ## Troubleshooting
 
 ### Documentation Not Loading
+
 1. Ensure the server is running
 2. Check that swagger dependencies are installed
 3. Verify the URL path is `/api-docs`
 
 ### Authentication Issues
+
 1. Ensure you're logged in via `/api/v1/auth/login`
 2. Check browser cookies for `jwt` token
 3. Verify token hasn't expired
 
 ### Endpoints Not Appearing
+
 1. Check that JSDoc comments are properly formatted
 2. Verify route files are in `src/routes/`
 3. Rebuild the project: `pnpm build`
@@ -294,7 +327,7 @@ The Swagger configuration is located in `src/config/swagger.ts`. To modify:
 ## Support
 
 For issues or questions:
+
 - Check the Swagger UI for detailed endpoint documentation
 - Review error responses for specific error messages
 - Contact: support@habesharide.com
-
