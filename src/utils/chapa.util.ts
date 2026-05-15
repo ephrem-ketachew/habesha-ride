@@ -302,10 +302,10 @@ export const verifyWebhookSignature = (
   }
 };
 
-export const generateTxRef = (): string => {
+export const generateTxRef = (prefix: string = 'RENT'): string => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 10);
-  return `kech-tx-${timestamp}-${random}`;
+  return `kech-${prefix}-${timestamp}-${random}`;
 };
 
 export const generateWebhookIdempotencyKey = (

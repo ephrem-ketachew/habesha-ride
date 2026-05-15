@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import config from './config/env.config.js';
 import logger from './config/logger.config.js';
 import connectDB, { disconnectDB } from './config/db.config.js';
+import { initializeCronJobs } from './services/cronJobs.service.js';
 
 import app from './app.js';
 
@@ -29,6 +30,8 @@ let server: http.Server;
 const startServer = async () => {
   try {
     await connectDB();
+
+    initializeCronJobs();
 
     server = app.listen(port, () => {
       logger.info(

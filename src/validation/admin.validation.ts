@@ -58,7 +58,7 @@ export const updateRentalListingStatusAdminSchema = z.object({
 
 export const updateSaleListingStatusAdminSchema = z.object({
   status: z.enum(
-    ['available', 'pending', 'sold'] as [SaleStatus, ...SaleStatus[]],
+    ['available', 'reserved', 'sold', 'delisted'] as [SaleStatus, ...SaleStatus[]],
     {
       message: 'Status is required',
     },

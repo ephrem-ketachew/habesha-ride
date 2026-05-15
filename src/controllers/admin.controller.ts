@@ -38,6 +38,17 @@ import {
   getAllBookingsAdmin,
   getBookingByIdAdmin,
 } from '../services/booking.service.js';
+import * as saleReservationService from '../services/saleReservation.service.js';
+import * as paymentService from '../services/payment.service.js';
+import {
+  GetSaleReservationsQuery,
+  ExtendReservationInput,
+  CompleteSaleInput,
+  CancelSaleReservationInput,
+  ProcessManualRefundInput,
+  AssignAgentInput,
+  GetSaleAnalyticsInput,
+} from '../validation/sale.validation.js';
 
 export const getAllCarsAdminHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -268,5 +279,140 @@ export const getBookingDetailsAdminHandler = catchAsync(
     const { id } = req.params;
     const booking = await getBookingByIdAdmin(id);
     res.status(200).json({ status: 'success', data: { booking } });
+  },
+);
+
+// ==================== SALE RESERVATION ADMIN HANDLERS ====================
+
+export const getAllSaleReservationsHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const query = req.query as unknown as GetSaleReservationsQuery;
+    const result = await saleReservationService.getAllSaleReservationsAdmin(query);
+
+    res.status(200).json({
+      status: 'success',
+      results: result.reservations.length,
+      pagination: result.pagination,
+      data: { reservations: result.reservations },
+    });
+  },
+);
+
+export const getSaleReservationDetailsHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const reservation = await saleReservationService.getReservationById(id, req.user!.id, req.user!.role);
+
+    res.status(200).json({
+      status: 'success',
+      data: { reservation },
+    });
+  },
+);
+
+export const extendReservationHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const input = req.body as ExtendReservationInput;
+
+    const reservation = await saleReservationService.extendReservationExpiry(
+      id,
+      input.extensionHours,
+      input.reason,
+      req.user!.id,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: `Reservation expiry extended by ${input.extensionHours} hours`,
+      data: { reservation },
+    });
+  },
+);
+
+export const completeSaleReservationHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const input = req.body as CompleteSaleInput;
+
+    const result = await saleReservationService.completeSaleReservationAdmin(
+      id,
+      input,
+      req.user!.id,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Reservation completed successfully',
+      data: result,
+    });
+  },
+);
+
+export const cancelSaleReservationAdminHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { reason, processRefund = true } = req.body as CancelSaleReservationInput & { processRefund?: boolean };
+
+    const result = await saleReservationService.cancelReservationAdmin(
+      id,
+      reason,
+      processRefund,
+      req.user!.id,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Reservation cancelled by admin',
+      data: result,
+    });
+  },
+);
+
+export const processManualRefundHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { refundAmount, reason } = req.body as ProcessManualRefundInput;
+
+    const refundTx = await paymentService.processSaleRefund(id, refundAmount, reason);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Refund processed successfully',
+      data: { refundTransaction: refundTx },
+    });
+  },
+);
+
+export const assignAgentHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { agentId, notes } = req.body as AssignAgentInput;
+
+    const reservation = await saleReservationService.assignAgentToReservation(
+      id,
+      agentId,
+      notes || '',
+      req.user!.id,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Agent assigned successfully',
+      data: { reservation },
+    });
+  },
+);
+
+export const getSaleAnalyticsHandler = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const query = req.query as GetSaleAnalyticsInput;
+
+    const analytics = await saleReservationService.getSaleReservationsAnalytics(query);
+
+    res.status(200).json({
+      status: 'success',
+      data: analytics,
+    });
   },
 );

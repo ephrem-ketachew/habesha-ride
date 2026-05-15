@@ -112,32 +112,32 @@ The Kech.ai Team
       <table class="breakdown-table">
         <tr>
           <td>Rental Fee:</td>
-          <td style="text-align: right;">${formatCurrency(breakdown.rentalFee)}</td>
+          <td style="text-align: right;">${formatCurrency(breakdown.rentalFee || 0)}</td>
         </tr>
         <tr>
           <td>Security Deposit:</td>
-          <td style="text-align: right;">${formatCurrency(breakdown.securityDeposit)}</td>
+          <td style="text-align: right;">${formatCurrency(breakdown.securityDeposit || 0)}</td>
         </tr>
         <tr>
           <td>Service Fee:</td>
-          <td style="text-align: right;">${formatCurrency(breakdown.serviceFee)}</td>
+          <td style="text-align: right;">${formatCurrency(breakdown.serviceFee || 0)}</td>
         </tr>
         ${
-          breakdown.deliveryFee > 0
+          (breakdown.deliveryFee || 0) > 0
             ? `
         <tr>
           <td>Delivery Fee:</td>
-          <td style="text-align: right;">${formatCurrency(breakdown.deliveryFee)}</td>
+          <td style="text-align: right;">${formatCurrency(breakdown.deliveryFee || 0)}</td>
         </tr>
         `
             : ''
         }
         ${
-          breakdown.discountAmount > 0
+          (breakdown.discountAmount || 0) > 0
             ? `
         <tr>
           <td>Discount:</td>
-          <td style="text-align: right; color: #10b981;">-${formatCurrency(breakdown.discountAmount)}</td>
+          <td style="text-align: right; color: #10b981;">-${formatCurrency(breakdown.discountAmount || 0)}</td>
         </tr>
         `
             : ''

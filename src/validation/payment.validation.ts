@@ -11,6 +11,10 @@ export const initializePaymentSchema = z.object({
   bookingId: objectIdSchema,
 });
 
+export const initializeSaleReservationPaymentSchema = z.object({
+  reservationId: objectIdSchema,
+});
+
 export const verifyPaymentSchema = z.object({
   tx_ref: z.string().min(1, 'Transaction reference is required'),
 });
@@ -44,7 +48,16 @@ export const adminTransactionFiltersSchema = z.object({
       'refund_failed',
     ])
     .optional(),
-  type: z.enum(['payment', 'refund', 'deposit', 'excess']).optional(),
+  type: z
+    .enum([
+      'payment',
+      'refund',
+      'deposit',
+      'excess',
+      'sale_reservation',
+      'sale_refund',
+    ])
+    .optional(),
   limit: z
     .string()
     .optional()
@@ -65,6 +78,9 @@ export type RefundPaymentParamsInput = z.infer<
   typeof refundPaymentParamsSchema
 >;
 export type RefundPaymentBodyInput = z.infer<typeof refundPaymentBodySchema>;
+export type InitializeSaleReservationPaymentInput = z.infer<
+  typeof initializeSaleReservationPaymentSchema
+>;
 export type AdminTransactionFiltersInput = z.infer<
   typeof adminTransactionFiltersSchema
 >;

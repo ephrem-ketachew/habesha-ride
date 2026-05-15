@@ -5,7 +5,6 @@
  *     Transaction:
  *       type: object
  *       required:
- *         - booking
  *         - user
  *         - type
  *         - status
@@ -20,14 +19,17 @@
  *           description: Transaction ID
  *         booking:
  *           type: string
- *           description: Reference to Booking
+ *           description: Reference to Booking (for rental transactions)
+ *         saleReservation:
+ *           type: string
+ *           description: Reference to SaleReservation (for sale transactions)
  *         user:
  *           type: string
  *           description: User who initiated transaction
  *         type:
  *           type: string
- *           enum: [payment, refund, deposit, excess]
- *           description: Transaction type
+ *           enum: [payment, refund, deposit, excess, sale_reservation, sale_refund]
+ *           description: Transaction type (payment/refund for rentals, sale_reservation/sale_refund for sales)
  *         status:
  *           type: string
  *           enum: [pending, processing, completed, failed, cancelled, refund_pending, refunded, refund_failed]
@@ -47,14 +49,31 @@
  *           properties:
  *             rentalFee:
  *               type: number
+ *               description: Rental fee (for rental transactions)
  *             securityDeposit:
  *               type: number
+ *               description: Security deposit (for rental transactions)
  *             serviceFee:
  *               type: number
+ *               description: Service fee (for rental transactions)
  *             deliveryFee:
  *               type: number
+ *               description: Delivery fee (for rental transactions)
  *             discountAmount:
  *               type: number
+ *               description: Discount amount (for rental transactions)
+ *             reservationFee:
+ *               type: number
+ *               description: Reservation fee (for sale transactions)
+ *             salePrice:
+ *               type: number
+ *               description: Sale price for reference (for sale transactions)
+ *             refundAmount:
+ *               type: number
+ *               description: Refund amount (for sale refund transactions)
+ *             platformFee:
+ *               type: number
+ *               description: Platform fee retained (for sale refund transactions)
  *         chapaTxRef:
  *           type: string
  *           description: Unique Chapa transaction reference
@@ -105,7 +124,11 @@ const transactionSchema = new Schema<ITransactionDocument>(
     booking: {
       type: Schema.Types.ObjectId,
       ref: 'Booking',
-      required: true,
+      index: true,
+    },
+    saleReservation: {
+      type: Schema.Types.ObjectId,
+      ref: 'SaleReservation',
       index: true,
     },
     user: {
@@ -143,11 +166,18 @@ const transactionSchema = new Schema<ITransactionDocument>(
       default: 'ETB',
     },
     breakdown: {
+      // Rental-specific
       rentalFee: { type: Number, default: 0 },
       securityDeposit: { type: Number, default: 0 },
       serviceFee: { type: Number, default: 0 },
       deliveryFee: { type: Number, default: 0 },
       discountAmount: { type: Number, default: 0 },
+
+      // Sale-specific
+      reservationFee: { type: Number, default: 0 },
+      salePrice: { type: Number, default: 0 },
+      refundAmount: { type: Number, default: 0 },
+      platformFee: { type: Number, default: 0 },
     },
     chapaTxRef: {
       type: String,
@@ -196,6 +226,7 @@ const transactionSchema = new Schema<ITransactionDocument>(
 );
 
 transactionSchema.index({ booking: 1, type: 1 });
+transactionSchema.index({ saleReservation: 1, type: 1 });
 transactionSchema.index({ user: 1, status: 1 });
 transactionSchema.index({ chapaTxRef: 1, status: 1 });
 

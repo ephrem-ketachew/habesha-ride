@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect, restrictTo } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
 import * as adminController from '../controllers/admin.controller.js';
+import * as cronJobsController from '../controllers/cronJobs.controller.js';
 import {
   getCarsAdminSchema,
   updateCarStatusSchema,
@@ -17,6 +18,16 @@ import {
   updateModelSchema,
 } from '../validation/admin.validation.js';
 import { getCarSchema } from '../validation/car.validation.js';
+import {
+  getSaleReservationsQuerySchema,
+  getSaleReservationIdSchema,
+  extendReservationSchema,
+  completeSaleSchema,
+  cancelSaleReservationSchema,
+  processManualRefundSchema,
+  assignAgentSchema,
+  getSaleAnalyticsSchema,
+} from '../validation/sale.validation.js';
 import { updateUserRoleSchema } from '../validation/admin.validation.js';
 import { getUserSchema } from '../validation/user.schema.js';
 
@@ -1330,6 +1341,489 @@ router.delete(
   '/models/:id',
   validate(getCarSchema, 'params'),
   adminController.deleteModelHandler,
+);
+
+/**
+ * @swagger
+ * /admin/cron-jobs/status:
+ *   get:
+ *     summary: Get cron jobs status (Admin only)
+ *     tags: [Admin - Cron Jobs]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Cron jobs status retrieved successfully
+ */
+router.get(
+  '/cron-jobs/status',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  cronJobsController.getCronJobsStatusHandler,
+);
+
+/**
+ * @swagger
+ * /admin/cron-jobs/expired-reservations:
+ *   post:
+ *     summary: Manually trigger expired reservations check (Admin only)
+ *     tags: [Admin - Cron Jobs]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Expired reservations check completed
+ */
+router.post(
+  '/cron-jobs/expired-reservations',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  cronJobsController.triggerExpiredReservationsHandler,
+);
+
+/**
+ * @swagger
+ * /admin/cron-jobs/reminders:
+ *   post:
+ *     summary: Manually trigger expiry reminders (Admin only)
+ *     tags: [Admin - Cron Jobs]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Expiry reminders sent
+ */
+router.post(
+  '/cron-jobs/reminders',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  cronJobsController.triggerRemindersHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations:
+ *   get:
+ *     summary: Get all sale reservations (Admin view)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Retrieve a paginated list of all sale reservations with comprehensive filtering. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, completed, cancelled, expired]
+ *         description: Filter by reservation status
+ *       - in: query
+ *         name: paymentStatus
+ *         schema:
+ *           type: string
+ *           enum: [pending, paid, refunded, failed]
+ *         description: Filter by payment status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           maximum: 100
+ *         description: Number of results per page
+ *       - in: query
+ *         name: buyerId
+ *         schema:
+ *           type: string
+ *         description: Filter by buyer ID
+ *       - in: query
+ *         name: sellerId
+ *         schema:
+ *           type: string
+ *         description: Filter by seller ID
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved sale reservations
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ */
+router.get(
+  '/sale/reservations',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationsQuerySchema, 'query'),
+  adminController.getAllSaleReservationsHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations/{id}:
+ *   get:
+ *     summary: Get sale reservation details (Admin view)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Retrieve detailed information about a specific sale reservation including buyer/seller data. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID - must be a valid MongoDB ObjectId
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved reservation details
+ *       400:
+ *         description: Bad request - invalid ID format
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Reservation not found
+ */
+router.get(
+  '/sale/reservations/:id',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationIdSchema, 'params'),
+  adminController.getSaleReservationDetailsHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations/{id}/extend:
+ *   patch:
+ *     summary: Extend reservation expiry time (Admin only)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Extend the expiry time of a reservation. Useful when buyers need more time to complete inspection. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - extensionHours
+ *               - reason
+ *             properties:
+ *               extensionHours:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 48
+ *                 description: Number of hours to extend the reservation
+ *               reason:
+ *                 type: string
+ *                 minLength: 10
+ *                 maxLength: 200
+ *                 description: Reason for extension
+ *     responses:
+ *       200:
+ *         description: Reservation expiry time extended successfully
+ *       400:
+ *         description: Bad request - invalid data or reservation not in extendable status
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Reservation not found
+ */
+router.patch(
+  '/sale/reservations/:id/extend',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationIdSchema, 'params'),
+  validate(extendReservationSchema, 'body'),
+  adminController.extendReservationHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations/{id}/complete:
+ *   patch:
+ *     summary: Complete sale reservation (Admin override)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Manually complete a sale reservation, marking it as sold. Use when offline settlement is confirmed but the reservation hasn't been marked complete. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - settlementMethod
+ *             properties:
+ *               settlementMethod:
+ *                 type: string
+ *                 enum: [bank_transfer, cpo, cash, other]
+ *                 description: Method used for final settlement
+ *               settlementReference:
+ *                 type: string
+ *                 description: Bank reference or receipt number
+ *               transportAuthorityTransferDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Date of ownership transfer at Transport Authority
+ *               notes:
+ *                 type: string
+ *                 maxLength: 500
+ *                 description: Additional notes about the completion
+ *     responses:
+ *       200:
+ *         description: Reservation completed successfully
+ *       400:
+ *         description: Bad request - reservation not in completable status
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Reservation not found
+ */
+router.patch(
+  '/sale/reservations/:id/complete',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationIdSchema, 'params'),
+  validate(completeSaleSchema, 'body'),
+  adminController.completeSaleReservationHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations/{id}/cancel:
+ *   patch:
+ *     summary: Cancel reservation (Admin override)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Force cancel a reservation as admin. Use for dispute resolution or policy violations. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 minLength: 10
+ *                 maxLength: 500
+ *                 description: Reason for cancellation
+ *               processRefund:
+ *                 type: boolean
+ *                 default: true
+ *                 description: Whether to process refund automatically
+ *     responses:
+ *       200:
+ *         description: Reservation cancelled successfully
+ *       400:
+ *         description: Bad request - cannot cancel reservation
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Reservation not found
+ */
+router.patch(
+  '/sale/reservations/:id/cancel',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationIdSchema, 'params'),
+  validate(cancelSaleReservationSchema, 'body'),
+  adminController.cancelSaleReservationAdminHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations/{id}/refund:
+ *   post:
+ *     summary: Process manual refund (Admin only)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Process a refund for a cancelled reservation. Use when automatic refund failed or manual processing is needed. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refundAmount
+ *               - reason
+ *             properties:
+ *               refundAmount:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Amount to refund (must not exceed original reservation fee)
+ *               reason:
+ *                 type: string
+ *                 minLength: 10
+ *                 maxLength: 500
+ *                 description: Reason for refund
+ *     responses:
+ *       200:
+ *         description: Refund processed successfully
+ *       400:
+ *         description: Bad request - invalid refund amount or reservation status
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Reservation not found
+ */
+router.post(
+  '/sale/reservations/:id/refund',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationIdSchema, 'params'),
+  validate(processManualRefundSchema, 'body'),
+  adminController.processManualRefundHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/reservations/{id}/agent:
+ *   patch:
+ *     summary: Assign agent to reservation (Admin only)
+ *     tags: [Admin - Sale Reservations]
+ *     description: Assign a customer service agent to handle a specific reservation. Useful for complex cases requiring personal attention. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - agentId
+ *             properties:
+ *               agentId:
+ *                 type: string
+ *                 description: Agent user ID to assign
+ *               notes:
+ *                 type: string
+ *                 maxLength: 500
+ *                 description: Notes for the agent
+ *     responses:
+ *       200:
+ *         description: Agent assigned successfully
+ *       400:
+ *         description: Bad request - invalid agent ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Reservation or agent not found
+ */
+router.patch(
+  '/sale/reservations/:id/agent',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleReservationIdSchema, 'params'),
+  validate(assignAgentSchema, 'body'),
+  adminController.assignAgentHandler,
+);
+
+/**
+ * @swagger
+ * /admin/sale/analytics:
+ *   get:
+ *     summary: Get sale reservations analytics (Admin only)
+ *     tags: [Admin - Sale Analytics]
+ *     description: Retrieve comprehensive analytics about sale reservations including conversion rates, revenue metrics, and performance indicators. Requires admin or superadmin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for analytics (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for analytics (YYYY-MM-DD)
+ *       - in: query
+ *         name: groupBy
+ *         schema:
+ *           type: string
+ *           enum: [day, week, month]
+ *           default: month
+ *         description: Group results by time period
+ *     responses:
+ *       200:
+ *         description: Analytics data retrieved successfully
+ *       400:
+ *         description: Bad request - invalid date range
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin role required
+ */
+router.get(
+  '/sale/analytics',
+  protect,
+  restrictTo('admin', 'superadmin'),
+  validate(getSaleAnalyticsSchema, 'query'),
+  adminController.getSaleAnalyticsHandler,
 );
 
 export default router;

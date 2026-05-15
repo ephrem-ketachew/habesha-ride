@@ -3,6 +3,7 @@ import catchAsync from '../utils/catchAsync.util.js';
 import * as paymentService from '../services/payment.service.js';
 import { verifyWebhookSignature } from '../utils/chapa.util.js';
 import logger from '../config/logger.config.js';
+import AppError from '../utils/appError.util.js';
 import {
   InitializePaymentInput,
   VerifyPaymentInput,
@@ -105,9 +106,7 @@ export const chapaWebhookHandler = async (
       });
     }
 
-    // Verify signature(s) - Chapa docs say to check both, if either is valid, proceed
-    // According to example: hash = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex')
-    const bodyString = JSON.stringify(payload); // Stringify the parsed JSON (as per Chapa example)
+    const bodyString = JSON.stringify(payload);
     let isValid = false;
 
     if (xChapaSignature) {
@@ -224,6 +223,12 @@ export const processRefundHandler = catchAsync(
 
     const transaction =
       await paymentService.getTransactionForAdmin(transactionId);
+
+    if (!transaction.booking) {
+      return next(
+        new AppError('This transaction is not associated with a booking', 400),
+      );
+    }
 
     const refundTransaction = await paymentService.createRefundTransaction(
       transaction.booking.toString(),

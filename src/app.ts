@@ -26,6 +26,7 @@ import saleRoutes from './routes/sale.routes.js';
 import listingRoutes from './routes/listing.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import saleReservationRoutes from './routes/saleReservation.routes.js';
 import verificationRoutes from './routes/verification.routes.js';
 import { chapaWebhookHandler } from './controllers/payment.controller.js';
 import analyticsRoutes from './routes/analytics.routes.js';
@@ -89,6 +90,7 @@ app.use('/api/v1/listings/sale', saleRoutes);
 app.use('/api/v1/listings', listingRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/sale/reservations', saleReservationRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/verification', verificationRoutes);
 

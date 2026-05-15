@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import Booking from '../models/booking.model.js';
 import Transaction from '../models/transaction.model.js';
 import User from '../models/user.model.js';
+import SaleReservation from '../models/saleReservation.model.js';
+import SaleListing from '../models/saleListing.model.js';
+import * as saleReservationService from './saleReservation.service.js';
+import * as purchaseAgreementService from './purchaseAgreement.service.js';
 import {
   TransactionType,
   TransactionStatus,
@@ -154,7 +158,9 @@ export const verifyPayment = async (tx_ref: string, userId: string) => {
       'Returning cached verification result',
     );
 
-    const booking = await Booking.findById(transaction.booking);
+    const booking = transaction.booking
+      ? await Booking.findById(transaction.booking)
+      : null;
     return {
       transaction,
       booking,
@@ -186,6 +192,19 @@ export const verifyPayment = async (tx_ref: string, userId: string) => {
   }
 
   await transaction.save();
+
+  // Only process booking updates if this is a rental transaction
+  if (!transaction.booking) {
+    logger.warn(
+      { tx_ref, transactionId: transaction._id },
+      'Transaction has no associated booking - likely a sale transaction',
+    );
+    return {
+      transaction,
+      booking: null,
+      message: 'Payment verified',
+    };
+  }
 
   const booking = await Booking.findById(transaction.booking).populate(
     'listing',
@@ -323,6 +342,79 @@ export const processWebhook = async (webhookPayload: IChapaWebhookPayload) => {
     },
     'Webhook processed, updating booking',
   );
+
+  if (
+    transaction.type === TransactionType.SALE_RESERVATION ||
+    transaction.saleReservation
+  ) {
+    logger.info(
+      { tx_ref, transactionId: String(updated._id) },
+      'Delegating to sale webhook handler',
+    );
+
+    if (!transaction.saleReservation) {
+      logger.warn({ tx_ref }, 'Sale transaction but no reservation found');
+      return updated;
+    }
+
+    const reservation = await SaleReservation.findByIdAndUpdate(
+      transaction.saleReservation,
+      {
+        paymentStatus: status === 'success' ? 'paid' : 'failed',
+        paymentTransaction: status === 'success' ? updated._id : undefined,
+        paymentMethod: status === 'success' ? payment_method : undefined,
+      },
+      { new: true },
+    ).populate('listing');
+
+    if (reservation && status === 'success') {
+      // Use helper function to mark as paid and update listing
+      await saleReservationService.markReservationAsPaid(
+        String(reservation._id),
+        updated._id as mongoose.Types.ObjectId,
+        payment_method || 'chapa',
+      );
+
+      logger.info(
+        {
+          reservationId: String(reservation._id),
+          transactionId: String(updated._id),
+        },
+        'Sale reservation completed via webhook',
+      );
+
+      // Generate purchase agreement PDF
+      try {
+        await purchaseAgreementService.generateAndUpdatePurchaseAgreement(
+          String(reservation._id),
+        );
+        logger.info(
+          { reservationId: String(reservation._id) },
+          'Purchase agreement PDF generated for webhook payment',
+        );
+      } catch (error: any) {
+        logger.error(
+          {
+            reservationId: String(reservation._id),
+            error: error.message,
+          },
+          'Failed to generate purchase agreement PDF after webhook payment',
+        );
+        // Don't throw - payment was successful, PDF can be generated later
+      }
+    }
+
+    return updated;
+  }
+
+  // Only update booking if this is a rental transaction
+  if (!transaction.booking) {
+    logger.info(
+      { tx_ref, transactionId: String(updated._id) },
+      'Skipping booking update - no associated booking or reservation',
+    );
+    return updated;
+  }
 
   const booking = await Booking.findByIdAndUpdate(
     transaction.booking,
@@ -466,6 +558,15 @@ export const getTransactionById = async (
     throw new AppError('Transaction not found', 404);
   }
 
+  // Handle sale transactions (no booking)
+  if (!transaction.booking) {
+    // For sale transactions, check if user is the transaction owner
+    if (transaction.user.toString() !== userId) {
+      throw new AppError('Not authorized to view this transaction', 403);
+    }
+    return transaction;
+  }
+
   const booking = transaction.booking as any;
   const renterId = booking.renter.toString();
   const ownerId = booking.owner.toString();
@@ -549,6 +650,15 @@ export const completeRefund = async (transactionId: string) => {
     'Refund marked as completed',
   );
 
+  // Only send email for rental refunds (not sale refunds)
+  if (!transaction.booking) {
+    logger.info(
+      { transactionId: transaction._id },
+      'Skipping refund email - sale refund will be handled separately',
+    );
+    return transaction;
+  }
+
   const booking = await Booking.findById(transaction.booking).populate(
     'renter',
   );
@@ -563,4 +673,386 @@ export const completeRefund = async (transactionId: string) => {
   }
 
   return transaction;
+};
+
+// ==================== SALE RESERVATION PAYMENT FUNCTIONS ====================
+
+/**
+ * Initialize payment for sale reservation
+ * Similar to booking payment but for car purchase reservations
+ */
+export const initializeSaleReservationPayment = async (
+  reservationId: string,
+  userId: string,
+) => {
+  const reservation = await SaleReservation.findById(reservationId)
+    .populate('buyer', 'firstName lastName email')
+    .populate('listing')
+    .populate({
+      path: 'car',
+      populate: [{ path: 'make' }, { path: 'vehicleModel' }],
+    });
+
+  if (!reservation) {
+    throw new AppError('Reservation not found', 404);
+  }
+
+  const buyer = reservation.buyer as any;
+  if (buyer._id.toString() !== userId) {
+    throw new AppError('Not authorized to pay for this reservation', 403);
+  }
+
+  if (reservation.paymentStatus === 'paid') {
+    throw new AppError('Reservation already paid', 400);
+  }
+
+  if (reservation.status !== 'pending') {
+    throw new AppError(
+      `Cannot initialize payment for reservation with status: ${reservation.status}`,
+      400,
+    );
+  }
+
+  // Check if there's already a pending transaction
+  const existingTx = await Transaction.findOne({
+    saleReservation: reservationId,
+    status: {
+      $in: [TransactionStatus.PENDING, TransactionStatus.PROCESSING],
+    },
+  });
+
+  if (existingTx) {
+    // Check if existing transaction has a valid checkout URL
+    if (existingTx.chapaCheckoutUrl) {
+      logger.info(
+        { reservationId, transactionId: existingTx._id },
+        'Returning existing pending sale reservation transaction',
+      );
+      return {
+        transaction: existingTx,
+        checkout_url: existingTx.chapaCheckoutUrl,
+      };
+    } else {
+      // Existing transaction exists but no checkout URL - delete it and create new one
+      logger.warn(
+        { reservationId, transactionId: existingTx._id },
+        'Found existing transaction without checkout URL, deleting and creating new one',
+      );
+      await Transaction.findByIdAndDelete(existingTx._id);
+    }
+  }
+
+  const amount = reservation.reservationFee;
+
+  const breakdown = {
+    reservationFee: reservation.reservationFee,
+    salePrice: reservation.salePrice,
+    platformFee: 0, // Will be calculated on completion
+  };
+
+  const tx_ref = generateTxRef('SALE');
+
+  const transaction = await Transaction.create({
+    saleReservation: reservationId,
+    user: userId,
+    type: TransactionType.SALE_RESERVATION,
+    status: TransactionStatus.PENDING,
+    provider: PaymentProvider.CHAPA,
+    amount,
+    currency: 'ETB',
+    breakdown,
+    chapaTxRef: tx_ref,
+    idempotencyKey: generatePaymentIdempotencyKey(reservationId),
+    initiatedAt: new Date(),
+  });
+
+  logger.info(
+    {
+      reservationId,
+      transactionId: transaction._id,
+      amount,
+      tx_ref,
+      userId,
+    },
+    'Sale reservation transaction created, initializing Chapa payment',
+  );
+
+  const car = reservation.car as any;
+  const carInfo =
+    `${car.make?.name || ''} ${car.vehicleModel?.name || ''} ${car.year || ''}`.trim();
+
+  const chapaResponse = await chapaService.initializePayment({
+    amount,
+    currency: 'ETB',
+    email: buyer.email,
+    first_name: buyer.firstName,
+    last_name: buyer.lastName,
+    tx_ref,
+    callback_url: config.payment.callbackUrl,
+    return_url: config.payment.returnUrl, // TODO: Consider adding separate saleReturnUrl in config
+    customization: {
+      title: 'Car Purchase',
+      description: `Reservation fee for ${carInfo}`,
+    },
+  });
+
+  transaction.chapaCheckoutUrl = chapaResponse.checkout_url;
+  transaction.chapaResponse = chapaResponse;
+  transaction.status = TransactionStatus.PROCESSING;
+  await transaction.save();
+
+  logger.info(
+    {
+      reservationId,
+      transactionId: transaction._id,
+      tx_ref,
+      checkout_url: chapaResponse.checkout_url,
+    },
+    'Sale reservation payment initialized successfully',
+  );
+
+  return {
+    transaction,
+    checkout_url: chapaResponse.checkout_url,
+  };
+};
+
+/**
+ * Verify sale reservation payment
+ */
+export const verifySaleReservationPayment = async (
+  tx_ref: string,
+  userId: string,
+) => {
+  const transaction = await Transaction.findOne({ chapaTxRef: tx_ref });
+
+  if (!transaction) {
+    throw new AppError('Transaction not found', 404);
+  }
+
+  if (transaction.user.toString() !== userId) {
+    throw new AppError('Not authorized to verify this transaction', 403);
+  }
+
+  if (transaction.status === TransactionStatus.COMPLETED) {
+    logger.info(
+      { tx_ref, transactionId: transaction._id },
+      'Returning cached sale reservation verification result',
+    );
+
+    const reservation = transaction.saleReservation
+      ? await SaleReservation.findById(transaction.saleReservation)
+      : null;
+
+    return {
+      transaction,
+      reservation,
+      message: 'Payment already verified',
+    };
+  }
+
+  logger.info(
+    { tx_ref, transactionId: transaction._id },
+    'Verifying sale reservation payment with Chapa',
+  );
+
+  const chapaData = await chapaService.verifyPayment(tx_ref);
+
+  const newStatus = chapaService.mapChapaStatusToTransactionStatus(
+    chapaData.status,
+  );
+
+  transaction.status = newStatus as TransactionStatus;
+  transaction.chapaTransactionId = chapaData.reference;
+  transaction.chapaPaymentMethod = chapaData.method;
+  transaction.chapaResponse = chapaData;
+
+  if (newStatus === 'completed') {
+    transaction.completedAt = new Date();
+  } else if (newStatus === 'failed' || newStatus === 'cancelled') {
+    transaction.failedAt = new Date();
+    transaction.lastError = `Payment ${newStatus} on Chapa`;
+  }
+
+  await transaction.save();
+
+  // Only process reservation updates if this is a sale transaction
+  if (!transaction.saleReservation) {
+    logger.warn(
+      { tx_ref, transactionId: transaction._id },
+      'Transaction has no associated sale reservation',
+    );
+    return {
+      transaction,
+      reservation: null,
+      message: 'Payment verified',
+    };
+  }
+
+  const reservation = await SaleReservation.findById(
+    transaction.saleReservation,
+  ).populate('listing');
+
+  if (!reservation) {
+    throw new AppError('Sale reservation not found', 404);
+  }
+
+  if (newStatus === 'completed') {
+    // Use helper function to mark as paid and update listing
+    await saleReservationService.markReservationAsPaid(
+      String(reservation._id),
+      transaction._id as mongoose.Types.ObjectId,
+      chapaData.method,
+    );
+
+    logger.info(
+      {
+        reservationId: String(reservation._id),
+        transactionId: String(transaction._id),
+        tx_ref,
+      },
+      'Sale reservation payment completed via verification',
+    );
+
+    // Generate purchase agreement PDF
+    try {
+      await purchaseAgreementService.generateAndUpdatePurchaseAgreement(
+        String(reservation._id),
+      );
+      logger.info(
+        { reservationId: String(reservation._id) },
+        'Purchase agreement PDF generated for verified payment',
+      );
+    } catch (error: any) {
+      logger.error(
+        {
+          reservationId: String(reservation._id),
+          error: error.message,
+        },
+        'Failed to generate purchase agreement PDF after payment verification',
+      );
+      // Don't throw - payment was successful, PDF can be generated later
+    }
+
+    // TODO: Send confirmation emails
+  } else if (newStatus === 'failed' || newStatus === 'cancelled') {
+    reservation.paymentStatus = 'failed';
+    await reservation.save();
+
+    logger.warn(
+      {
+        reservationId: String(reservation._id),
+        transactionId: String(transaction._id),
+        tx_ref,
+        status: newStatus,
+      },
+      'Sale reservation payment failed',
+    );
+  }
+
+  return {
+    transaction,
+    reservation,
+    message: 'Payment verified',
+  };
+};
+
+/**
+ * Process sale reservation refund
+ * Used when buyer cancels or reservation expires
+ */
+export const processSaleRefund = async (
+  reservationId: string,
+  refundAmount: number,
+  reason: string,
+) => {
+  const reservation = await SaleReservation.findById(reservationId);
+
+  if (!reservation) {
+    throw new AppError('Reservation not found', 404);
+  }
+
+  // Find the original payment transaction
+  const originalTransaction = await Transaction.findById(
+    reservation.paymentTransaction,
+  );
+
+  if (!originalTransaction) {
+    throw new AppError('Original payment transaction not found', 404);
+  }
+
+  if (originalTransaction.status !== TransactionStatus.COMPLETED) {
+    throw new AppError('Original payment is not completed', 400);
+  }
+
+  // Check if refund already exists
+  const existingRefund = await Transaction.findOne({
+    saleReservation: reservationId,
+    type: TransactionType.SALE_REFUND,
+  });
+
+  if (existingRefund) {
+    logger.warn(
+      { reservationId, existingRefundId: existingRefund._id },
+      'Refund already exists for this reservation',
+    );
+    return existingRefund;
+  }
+
+  // Create refund transaction
+  const platformFee = reservation.reservationFee - refundAmount;
+
+  const refundTx = await Transaction.create({
+    saleReservation: reservationId,
+    user: reservation.buyer,
+    type: TransactionType.SALE_REFUND,
+    status: TransactionStatus.PENDING,
+    provider: originalTransaction.provider,
+    amount: refundAmount,
+    currency: 'ETB',
+    breakdown: {
+      reservationFee: reservation.reservationFee,
+      refundAmount,
+      platformFee,
+    },
+    idempotencyKey: generateRefundIdempotencyKey(reservationId),
+    initiatedAt: new Date(),
+  });
+
+  logger.info(
+    {
+      reservationId,
+      refundTransactionId: refundTx._id,
+      refundAmount,
+      platformFee,
+      reason,
+    },
+    'Sale refund transaction created',
+  );
+
+  // Note: Chapa refund API may not be available yet
+  // For now, mark as completed and process manually if needed
+  // In production, you would call Chapa's refund API here
+
+  refundTx.status = TransactionStatus.COMPLETED;
+  refundTx.completedAt = new Date();
+  await refundTx.save();
+
+  // Update reservation with refund details
+  reservation.refundStatus = 'processed';
+  reservation.refundTransaction = refundTx._id as mongoose.Types.ObjectId;
+  await reservation.save();
+
+  logger.info(
+    {
+      reservationId,
+      refundTransactionId: refundTx._id,
+      refundAmount,
+    },
+    'Sale refund processed successfully',
+  );
+
+  // TODO: Send refund confirmation email
+
+  return refundTx;
 };

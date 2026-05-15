@@ -24,14 +24,14 @@
  *           example: 507f1f77bcf86cd799439013
  *         status:
  *           type: string
- *           enum: [available, pending, sold]
+ *           enum: [available, reserved, sold, delisted]
  *           default: available
- *           description: Sale status
+ *           description: Sale status (available, reserved during 48h hold, sold when completed, delisted if removed)
  *         salePrice:
  *           type: number
  *           minimum: 0
- *           description: Sale price
- *           example: 450000
+ *           description: Sale price in ETB
+ *           example: 1500000
  *         listingDescription:
  *           type: string
  *           minLength: 10
@@ -42,6 +42,30 @@
  *           type: boolean
  *           default: false
  *           description: Whether this is a featured listing
+ *         reservedBy:
+ *           type: string
+ *           description: User ID who reserved the car (only if status is reserved)
+ *           example: 507f1f77bcf86cd799439014
+ *         reservedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when car was reserved
+ *         reservationExpiresAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when reservation expires (typically 48 hours after reservedAt)
+ *         soldAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when car was sold
+ *         allowNegotiation:
+ *           type: boolean
+ *           default: false
+ *           description: Whether seller allows price negotiation (future feature)
+ *         minimumOfferPrice:
+ *           type: number
+ *           minimum: 0
+ *           description: Minimum acceptable offer price if negotiation is allowed (future feature)
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -72,7 +96,7 @@ const saleListingSchema = new Schema<ISaleListingDocument>(
     status: {
       type: String,
       enum: {
-        values: ['available', 'pending', 'sold'] as SaleStatus[],
+        values: ['available', 'reserved', 'sold', 'delisted'] as SaleStatus[],
       },
       default: 'available',
       index: true,
@@ -93,6 +117,37 @@ const saleListingSchema = new Schema<ISaleListingDocument>(
       default: false,
       index: true,
     },
+
+    reservedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    reservedAt: {
+      type: Date,
+      default: null,
+    },
+    reservationExpiresAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    soldAt: {
+      type: Date,
+      default: null,
+    },
+
+    allowNegotiation: {
+      type: Boolean,
+      default: false,
+    },
+    minimumOfferPrice: {
+      type: Number,
+      min: [0, 'Minimum offer price cannot be negative.'],
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -104,6 +159,8 @@ saleListingSchema.plugin(mongooseSanitize);
 saleListingSchema.index({ owner: 1, status: 1 });
 
 saleListingSchema.index({ status: 1, isFeatured: 1 });
+saleListingSchema.index({ reservedBy: 1, status: 1 });
+saleListingSchema.index({ status: 1, reservationExpiresAt: 1 });
 
 const SaleListing = mongoose.model<ISaleListingDocument>(
   'SaleListing',

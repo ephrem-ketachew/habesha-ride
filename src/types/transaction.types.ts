@@ -2,10 +2,12 @@ import mongoose, { Document } from 'mongoose';
 import { IChapaCustomization } from './chapa.types.js';
 
 export enum TransactionType {
-  PAYMENT = 'payment',
-  REFUND = 'refund',
-  SECURITY_DEPOSIT = 'deposit',
-  EXCESS_CHARGE = 'excess',
+  PAYMENT = 'payment', // Rental payment
+  REFUND = 'refund', // Rental refund
+  SECURITY_DEPOSIT = 'deposit', // Rental security deposit
+  EXCESS_CHARGE = 'excess', // Rental excess charges
+  SALE_RESERVATION = 'sale_reservation', // Sale reservation fee payment
+  SALE_REFUND = 'sale_refund', // Sale reservation fee refund
 }
 
 export enum TransactionStatus {
@@ -25,15 +27,22 @@ export enum PaymentProvider {
 }
 
 export interface IFinancialBreakdown {
-  rentalFee: number;
-  securityDeposit: number;
-  serviceFee: number;
-  deliveryFee: number;
-  discountAmount: number;
+  rentalFee?: number; // For rentals
+  securityDeposit?: number; // For rentals
+  serviceFee?: number; // For rentals
+  deliveryFee?: number; // For rentals
+  discountAmount?: number; // For rentals
+  
+  // Sale-specific breakdown
+  reservationFee?: number; // For sale reservations
+  salePrice?: number; // Original sale price (for reference)
+  refundAmount?: number; // For sale refunds
+  platformFee?: number; // Platform fee retained
 }
 
 export interface ITransaction {
-  booking: mongoose.Types.ObjectId;
+  booking?: mongoose.Types.ObjectId; // Optional now - only for rentals
+  saleReservation?: mongoose.Types.ObjectId; // For sale transactions
   user: mongoose.Types.ObjectId;
   type: TransactionType;
   status: TransactionStatus;

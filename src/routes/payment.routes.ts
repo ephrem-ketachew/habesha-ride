@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect, restrictTo } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
 import * as paymentController from '../controllers/payment.controller.js';
+import * as saleReservationController from '../controllers/saleReservation.controller.js';
 import * as paymentValidation from '../validation/payment.validation.js';
 
 const router = Router();
@@ -67,6 +68,46 @@ router.post(
 
 /**
  * @swagger
+ * /payments/initialize-sale:
+ *   post:
+ *     summary: Initialize payment for a sale reservation
+ *     tags: [Payments]
+ *     description: Initialize payment for a sale reservation. The reservation must be in 'pending' status and payment must not already be completed.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reservationId
+ *             properties:
+ *               reservationId:
+ *                 type: string
+ *                 description: Sale reservation ID to pay for (must be in 'pending' status)
+ *     responses:
+ *       200:
+ *         description: Payment initialized successfully
+ *       400:
+ *         description: Bad request (reservation already paid, reservation not pending, or invalid status)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Not authorized to pay for this reservation
+ *       404:
+ *         description: Reservation not found
+ */
+router.post(
+  '/initialize-sale',
+  protect,
+  validate(paymentValidation.initializeSaleReservationPaymentSchema, 'body'),
+  saleReservationController.initializePaymentHandler,
+);
+
+/**
+ * @swagger
  * /payments/verify/{tx_ref}:
  *   get:
  *     summary: Verify payment status
@@ -97,6 +138,40 @@ router.get(
   protect,
   validate(paymentValidation.verifyPaymentSchema, 'params'),
   paymentController.verifyPaymentHandler,
+);
+
+/**
+ * @swagger
+ * /payments/verify-sale/{tx_ref}:
+ *   get:
+ *     summary: Verify sale reservation payment status
+ *     tags: [Payments]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tx_ref
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction reference from Chapa
+ *     responses:
+ *       200:
+ *         description: Payment verified successfully
+ *       402:
+ *         description: Payment failed or cancelled
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Not authorized to verify this transaction
+ *       404:
+ *         description: Transaction not found
+ */
+router.get(
+  '/verify-sale/:tx_ref',
+  protect,
+  validate(paymentValidation.verifyPaymentSchema, 'params'),
+  saleReservationController.verifyPaymentHandler,
 );
 
 /**
