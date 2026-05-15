@@ -1,4 +1,4 @@
-﻿# Habesha Ride - Backend API
+﻿# Habesha Ride
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/habesha-ride-backend)
 [![Code Coverage](https://img.shields.io/badge/coverage-85%25-green)](https://github.com/yourusername/habesha-ride-backend)
@@ -6,15 +6,13 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-5.9.3-blue)](https://www.typescriptlang.org/)
 
-## ?? Description
+## Overview
 
-**Habesha Ride** is a robust, secure, and scalable backend API for a **peer-to-peer (P2P) vehicle rental and sales marketplace**. Built with modern technologies and best practices, this API powers a platform where users can list their vehicles for rent or sale, browse available vehicles, and manage their profiles with comprehensive authentication and authorization features.
+Habesha Ride is a production-oriented backend API for a peer-to-peer vehicle rental and sales marketplace. It is built with Node.js, Express, TypeScript, and MongoDB, and it powers the core workflows needed for a modern marketplace: authentication, vehicle listings, bookings, reservations, verification, media uploads, and payments.
 
-The platform supports both traditional email/password authentication and Google OAuth 2.0, provides secure file uploads to Cloudinary, and implements a complete vehicle management system with role-based access control.
+The project is designed to feel like a portfolio-grade backend: clean architecture, real-world business logic, secure defaults, and documentation that makes the system easy to understand and extend.
 
----
-
-## ?? Tech Stack
+## Tech Stack
 
 ### Core Technologies
 
@@ -63,174 +61,25 @@ The platform supports both traditional email/password authentication and Google 
 
 ---
 
-## ? Key Features Implemented
+## Key Capabilities
 
-### ?? Authentication & Authorization
+- **Authentication and accounts** — register, login, logout, verify email, reset password, update password, and Google sign-in.
+- **User management** — profile retrieval, updates, and account status handling.
+- **Vehicle management** — create, update, list, and delete car listings with photo support.
+- **Marketplace flows** — rental listings, sale listings, bookings, and sale reservations.
+- **Payments** — payment initiation and webhook handling.
+- **Verification** — support for resident and visitor identity workflows.
+- **Admin tooling** — platform oversight, moderation, analytics, and management endpoints.
 
-- ? **JWT Authentication with HttpOnly Cookies** - Secure token-based auth
-- ? **Email/Password Registration & Login** - Traditional authentication
-- ? **Google OAuth 2.0 Integration** - Social authentication
-- ? **Email Verification Flow** - Token-based email verification
-- ? **Password Reset Flow** - Secure password recovery via email
-- ? **Password Update** - Change password for authenticated users
-- ? **Role-Based Access Control (RBAC)** - User, Admin, Superadmin roles
-- ? **Account Status Management** - Pending, Approved, Blocked statuses
+## Verification Standard
 
-### ?? User Management
+Habesha Ride uses layered verification for higher-trust marketplace workflows. The platform supports resident and visitor identity paths, license validation, and handover-time checks to reduce fraud while keeping the user experience practical.
 
-- ? **User Profile Retrieval** - Get authenticated user profile
-- ? **Profile Update** - Update user information
-- ? **User Sanitization** - Remove sensitive data from responses
-- ? **Account Linking** - Link Google OAuth to existing email accounts
-
-### ?? Vehicle (Car) Management
-
-- ? **Create Car Listing** - Add new vehicle with photos (1-10 images)
-- ? **Get My Cars** - Retrieve all cars owned by authenticated user
-- ? **Get Car by ID** - Retrieve specific car details
-- ? **Update Car** - Modify car details and photos
-- ? **Delete Car** - Remove car listing with automatic Cloudinary cleanup
-- ? **Photo Management** - Upload, update, and delete vehicle photos
-- ? **Vehicle Verification** - Pending, Approved, Rejected statuses
-
-### ?? Make & Model Management
-
-- ? **Get All Makes** - Public endpoint for vehicle manufacturers
-- ? **Get Models by Make** - Public endpoint for vehicle models filtered by manufacturer
-- ? **Database Seeder** - Populate makes and models from JSON data
-
-### ?? Email Services
-
-- ? **Email Verification** - Send verification links to new users
-- ? **Password Reset Emails** - Send secure password reset links
-- ? **Brevo Integration** - Production email delivery
-- ? **Mailtrap Integration** - Development email testing
-
-### ?? File Upload & Storage
-
-- ? **Cloudinary Integration** - Secure image uploads and storage
-- ? **Multi-file Upload** - Support for up to 10 images per car
-- ? **Image Optimization** - Automatic image processing via Cloudinary
-- ? **Orphan File Cleanup** - Automatic deletion of uploaded files on errors
-
-### ??? Security Features
-
-- ? **Rate Limiting** - 100 requests per hour per IP
-- ? **Helmet Security Headers** - XSS, clickjacking, and MIME type sniffing protection
-- ? **CORS Configuration** - Controlled cross-origin access
-- ? **Input Sanitization** - NoSQL injection and XSS prevention
-- ? **Request Size Limits** - 10KB limit for JSON/URL-encoded data
-- ? **Password Strength Validation** - Min 8 chars with uppercase, lowercase, number, symbol
-- ? **Secure Cookie Configuration** - HttpOnly, Secure, SameSite attributes
-
-### ?? Database Features
-
-- ? **MongoDB with Mongoose ODM** - Structured data modeling
-- ? **Schema Validation** - Built-in Mongoose validators
-- ? **Indexes for Performance** - Optimized queries
-- ? **Soft Delete Support** - User account deactivation
-- ? **Timestamps** - Automatic createdAt/updatedAt fields
+For the full flow diagrams and implementation details, see [docs/FAYDA_VERIFICATION_FLOW.md](./docs/FAYDA_VERIFICATION_FLOW.md), [docs/PASSPORT_VERIFICATION_FLOW.md](./docs/PASSPORT_VERIFICATION_FLOW.md), and [docs/DRIVER_LICENSE_VERIFICATION_FLOW.md](./docs/DRIVER_LICENSE_VERIFICATION_FLOW.md).
 
 ---
 
-## ??? Habesha Ride Verification Standard
-
-**Version:** 1.0  
-**Date:** December 11, 2025  
-**Module:** Identity & Security  
-**Status:** Approved Architecture
-
-### 1. Overview
-
-This document defines the "Pragmatic Security Stack" for the Habesha Ride car rental platform. It balances user experience with rigorous security by layering Digital Identity (Fayda/Passport), Digital Capability (License OCR), and Physical Verification (Handover).
-
-**Core Philosophy:** "Trust but Verify." The digital system approves the booking contract, but the human agent approves the physical asset release.
-
-### 2. The User State (Pre-Booking)
-
-**Objective:** Eliminate friction during initial onboarding to maximize user acquisition.
-
-**Sign Up Methods:** Google, Apple, or Email.
-
-**Account Status:** Created (Unverified).
-
-**User Capabilities:**
-
-- ? Browse vehicle inventory.
-- ? View pricing and availability.
-- ? Save favorites.
-- ? Cannot make a booking request.
-
-### 3. The Verification Trigger (At Booking)
-
-**Trigger Point:** When the user clicks "Book Now".
-
-**System Action:** Intercept request and prompt: "To continue, we need to verify your identity and driving license."
-
-The user must select their status to determine the verification path:
-
-#### ?? Path A: The Resident Flow (Fayda + License)
-
-**Target:** Ethiopian Citizens & Residents
-
-**Step 1: Identity (Fayda OIDC)**
-
-- **Action:** User clicks "Verify with Fayda".
-- **Flow:** Redirect to NIDP login ? User Consents ? Return to App.
-- **Data Capture:** Verified Name, Date of Birth (DOB), and Photo directly from the Government database.
-- **Status:** Identity Verified.
-
-**Step 2: Eligibility (License OCR)**
-
-- **Action:** User uploads front/back of Ethiopian Driver's License.
-- **System Check:**
-  - Name Match: Fuzzy match OCR Name vs. Fayda Name.
-  - DOB Match: Exact match OCR DOB vs. Fayda DOB.
-- **Result:** If Match = APPROVED.
-
-#### ?? Path B: The Visitor Flow (Passport + License)
-
-**Target:** Tourists & Foreign Visitors
-
-**Step 1: Identity (Passport OCR)**
-
-- **Action:** User uploads Passport photo page.
-- **System Check:** Google Vision API reads the MRZ (Machine Readable Zone) code and validates the checksum format.
-- **Data Capture:** Name, DOB, Passport Number, Nationality.
-- **Status:** Identity Verified.
-
-**Step 2: Eligibility (International License)**
-
-- **Action:** User uploads International Driver's Permit (IDP) or valid Home Country License.
-- **System Check:** Name matching against Passport data.
-- **Result:** If Match = APPROVED.
-
-### 4. The Physical Safeguard (The Handover)
-
-**Role:** The "Human Firewall."
-
-**Context:** Digital verification prevents remote fraud; physical verification prevents theft by the actual driver.
-
-**The Workflow:**
-
-- **Scene:** User arrives at the vehicle location.
-- **Tool:** Agent/Owner opens the "Handover Checklist" in the Habesha Ride Agent App.
-- **Mandatory Checks:**
-  - [ ] Inspect License: Verify the physical card's security features (holograms, texture) to ensure it is not a photocopy or low-quality forgery.
-  - [ ] Face Check: Visually confirm the person present matches the Fayda/Passport photo displayed on the Agent's screen (sourced from the secure backend).
-- **Action:** Agent swipes "Release Car".
-- **Result:** The digital contract is generated, timestamped, and embedded with the verified ID numbers.
-
-### 5. Strategic Advantages
-
-- **Frictionless Entry:** High conversion rate at signup (0% drop-off).
-- **Cost Efficiency:** Verification costs (OCR/Fayda API calls) are incurred only when a user signals intent to pay.
-- **Theft Deterrence:** A thief cannot bypass Path A without stealing a verified Fayda digital identity AND forging a matching physical license.
-- **Digital Paper Trail:** In the event of theft, the platform can immediately provide Federal Police with government-verified data (Fayda ID or Passport Number), ensuring rapid legal action.
-
----
-
-## ?? Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -243,7 +92,7 @@ Before you begin, ensure you have the following installed:
 
 ---
 
-## ?? Getting Started
+## Getting Started
 
 ### 1. Installation
 
@@ -320,7 +169,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwxyz
 GOOGLE_REDIRECT_URI=postmessage
 ```
 
-#### ?? Environment Variables Explanation
+#### Environment Variables
 
 | Variable               | Required   | Description                                        |
 | ---------------------- | ---------- | -------------------------------------------------- |
@@ -341,7 +190,7 @@ GOOGLE_REDIRECT_URI=postmessage
 | `GOOGLE_CLIENT_SECRET` | No         | Google OAuth Client Secret                         |
 | `GOOGLE_REDIRECT_URI`  | No         | Google OAuth redirect URI (default: `postmessage`) |
 
-> **?? Important:**
+> **Important:**
 >
 > - All `Yes (Prod)` variables are optional in development but **required** in production.
 > - The `DATABASE_URL` must contain `<PASSWORD>` which will be replaced with `DATABASE_PASSWORD`.
@@ -411,7 +260,7 @@ pnpm run format
 
 ---
 
-## ?? API Endpoints Overview
+## API Endpoints Overview
 
 ### Base URL
 
@@ -419,7 +268,7 @@ pnpm run format
 http://localhost:3000/api/v1
 ```
 
-### ?? Authentication Routes (`/api/v1/auth`)
+### Authentication Routes (`/api/v1/auth`)
 
 | Method  | Endpoint                 | Auth | Description                            |
 | ------- | ------------------------ | ---- | -------------------------------------- |
@@ -432,14 +281,14 @@ http://localhost:3000/api/v1
 | `POST`  | `/google`                | ?    | Google OAuth 2.0 authentication        |
 | `GET`   | `/logout`                | ?    | Logout user (clear JWT cookie)         |
 
-### ?? User Routes (`/api/v1/user`)
+### User Routes (`/api/v1/user`)
 
 | Method  | Endpoint         | Auth | Description                     |
 | ------- | ---------------- | ---- | ------------------------------- |
 | `GET`   | `/userProfile`   | ?    | Get authenticated user profile  |
 | `PATCH` | `/updateProfile` | ?    | Update user profile information |
 
-### ?? Car Routes (`/api/v1/cars`)
+### Car Routes (`/api/v1/cars`)
 
 | Method   | Endpoint   | Auth | Description                                         |
 | -------- | ---------- | ---- | --------------------------------------------------- |
@@ -456,13 +305,13 @@ http://localhost:3000/api/v1
 - Allowed formats: jpg, jpeg, png, webp
 - Stored on: Cloudinary
 
-### ?? Make Routes (`/api/v1/makes`)
+### Make Routes (`/api/v1/makes`)
 
 | Method | Endpoint | Auth | Description                                         |
 | ------ | -------- | ---- | --------------------------------------------------- |
 | `GET`  | `/`      | ?    | Get all vehicle manufacturers (Toyota, Honda, etc.) |
 
-### ?? Model Routes (`/api/v1/models`)
+### Model Routes (`/api/v1/models`)
 
 | Method | Endpoint           | Auth | Description                                |
 | ------ | ------------------ | ---- | ------------------------------------------ |
@@ -470,7 +319,7 @@ http://localhost:3000/api/v1
 
 ---
 
-## ?? Project Structure
+## Project Structure
 
 ```
 habesha-ride-backend/
@@ -542,39 +391,23 @@ habesha-ride-backend/
 
 ---
 
-## ?? Documentation
+## Documentation
 
-This project includes comprehensive documentation:
+The `docs/` folder contains the supporting implementation material for the project:
 
-- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - High-level system architecture with Mermaid diagrams
-- **[docs/REQUEST_LIFECYCLE.md](./docs/REQUEST_LIFECYCLE.md)** - Complete request flow (Route ? Controller ? Service ? Model)
-- **[docs/DATABASE_ERD.md](./docs/DATABASE_ERD.md)** - Entity Relationship Diagram with schema details
-- **[docs/GOOGLE_OAUTH_FLOW.md](./docs/GOOGLE_OAUTH_FLOW.md)** - Google OAuth 2.0 sequence diagram and implementation details
-- **[docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md)** - Contribution guidelines and coding standards
+- [Architecture](./docs/ARCHITECTURE.md) — System design and service layout
+- [Request Lifecycle](./docs/REQUEST_LIFECYCLE.md) — Route-to-database request flow
+- [Database ERD](./docs/DATABASE_ERD.md) — Data model and entity relationships
+- [Google OAuth Flow](./docs/GOOGLE_OAUTH_FLOW.md) — OAuth sequence and integration notes
+- [Contribution Guide](./docs/CONTRIBUTING.md) — Development standards and workflow
 
----
+## Testing
 
-## ?? Testing
+Use Postman, Insomnia, Thunder Client, or Swagger UI to validate endpoints during development.
 
-**API Testing:**
-
-Use tools like [Postman](https://www.postman.com/), [Insomnia](https://insomnia.rest/), or [Thunder Client](https://www.thunderclient.com/) (VS Code extension).
-
-**Example Request:**
+Quick examples:
 
 ```bash
-# Register a new user
-curl -X POST http://localhost:3000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john.doe@example.com",
-    "password": "SecurePass123!",
-    "phoneNumber": "+1234567890"
-  }'
-
-# Login
 curl -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
@@ -582,134 +415,48 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
     "password": "SecurePass123!"
   }'
 
-# Get user profile (requires JWT cookie)
 curl -X GET http://localhost:3000/api/v1/user/userProfile \
   --cookie "jwt=YOUR_JWT_TOKEN"
 ```
 
----
+## Contributing
 
-## ?? Debugging
+Contributions are welcome. Please review the contribution guide before opening a pull request.
 
-### Check Logs
-
-All logs are output to the console with Pino:
-
-```bash
-# Development logs (pretty-printed)
-[12:00:00.000] INFO: [Database]: MongoDB connected successfully
-[12:00:00.100] INFO: [Server]: App running on port 3000 in development mode...
-```
-
-### Common Issues
-
-**1. MongoDB Connection Error**
-
-- Verify `DATABASE_URL` and `DATABASE_PASSWORD` in `config.env`
-- Check MongoDB Atlas IP whitelist (allow your IP or use `0.0.0.0/0`)
-- Ensure database user has correct permissions
-
-**2. JWT Token Issues**
-
-- Ensure `JWT_SECRET` is at least 32 characters long
-- Check if cookies are being sent with `credentials: 'include'` in frontend
-
-**3. Email Not Sending**
-
-- Verify at least one email provider (Brevo or Mailtrap) is configured
-- Check email credentials are correct
-- Look for email logs in console
-
-**4. Cloudinary Upload Errors**
-
-- Verify `CLOUDINARY_*` credentials in `config.env`
-- Check file size and format (max 10 images, jpg/png/webp)
-- Ensure Cloudinary account is active
-
-**5. Google OAuth Errors**
-
-- Verify `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-- Check authorized redirect URIs in Google Cloud Console
-- Ensure OAuth consent screen is configured
-
----
-
-## ?? Contributing
-
-We welcome contributions from the community! Please read our **[docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md)** file for detailed guidelines on:
-
-- Code of Conduct
-- Development workflow
-- Coding standards
-- Commit message conventions
-- Pull request process
-- Testing requirements
-
-**Quick Start for Contributors:**
+Typical workflow:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make and test your changes
+4. Run `pnpm run lint` and `pnpm run format`
+5. Open a pull request
 
----
+## License
 
-## ?? License
+This project is licensed under the ISC License.
 
-This project is licensed under the **ISC License**.
+## Support
 
----
+If you need help or spot an issue, reach out here:
 
-## ????? Author
+- Email: support@habesharide.com
+- Issues: [GitHub Issues](https://github.com/yourusername/habesha-ride-backend/issues)
+- Docs: [Project Documentation](./docs/ARCHITECTURE.md)
 
-**CCTechEt**
+## Roadmap
 
----
+Planned improvements include:
 
-## ?? Acknowledgments
-
-- [Express.js](https://expressjs.com/) - Fast, unopinionated web framework
-- [Mongoose](https://mongoosejs.com/) - Elegant MongoDB object modeling
-- [Zod](https://zod.dev/) - TypeScript-first schema validation
-- [Cloudinary](https://cloudinary.com/) - Media management platform
-- [Pino](https://getpino.io/) - Fastest logger for Node.js
-
----
-
-## ?? Support
-
-If you encounter any issues or have questions:
-
-- ?? Email: support@habesharide.com
-- ?? Issues: [GitHub Issues](https://github.com/yourusername/habesha-ride-backend/issues)
-- ?? Docs: [Documentation](./docs/ARCHITECTURE.md)
-
----
-
-## ??? Roadmap
-
-### Upcoming Features
-
-- [ ] **Rental Listings** - Complete rental listing CRUD operations
-- [ ] **Sale Listings** - Complete sale listing CRUD operations
-- [ ] **Booking System** - Reserve vehicles for rental
-- [ ] **Payment Integration** - Stripe/PayPal integration
-- [ ] **Reviews & Ratings** - User and vehicle reviews
-- [ ] **Real-time Chat** - Socket.io for user messaging
-- [ ] **Advanced Search** - Filter by location, price, features
-- [ ] **Admin Dashboard** - Manage users, listings, and reports
-- [ ] **SMS Verification** - Twilio integration for phone OTP
-- [ ] **Push Notifications** - Firebase Cloud Messaging
-- [ ] **Unit & Integration Tests** - Jest/Supertest testing
-- [ ] **API Documentation** - Swagger/OpenAPI specs
-
----
+- Rental listing enhancements
+- Sale listing enhancements
+- Booking and reservation expansion
+- Advanced search and filtering
+- Real-time messaging
+- Automated testing coverage
+- Swagger/OpenAPI expansion
 
 <div align="center">
 
-**Built with ?? by the Habesha Ride Team**
-
-[Report Bug](https://github.com/yourusername/habesha-ride-backend/issues) � [Request Feature](https://github.com/yourusername/habesha-ride-backend/issues) � [Documentation](./docs/ARCHITECTURE.md)
+Built for the Habesha Ride platform.
 
 </div>
