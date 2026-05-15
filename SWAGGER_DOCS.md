@@ -19,7 +19,7 @@ http://localhost:3000/api-docs
 The production API documentation is available at:
 
 ```
-https://habesha-ride-backend-v2.onrender.com/api-docs
+https://habesha-ride-backend.onrender.com/api-docs
 ```
 
 ## Features
@@ -84,7 +84,7 @@ http://localhost:3000/api/v1
 
 ### Production
 ```
-https://habesha-ride-backend-v2.onrender.com/api/v1
+https://habesha-ride-backend.onrender.com/api/v1
 ```
 
 ## Schema Definitions

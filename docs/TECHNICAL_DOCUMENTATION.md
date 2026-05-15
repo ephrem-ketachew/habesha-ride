@@ -176,7 +176,7 @@ The Habesha Ride backend follows a **3-tier layered architecture** pattern with 
 ### 2.1 Directory Structure
 
 ```
-habesha-ride-backend-v2/
+habesha-ride-backend/
 ├── src/                          # Source code directory
 │   ├── _data/                    # Static data files (JSON)
 │   │   ├── cars.json            # Vehicle makes/models seed data
@@ -654,7 +654,7 @@ JSON Response Sent to Client
 #### **API Base URLs**
 
 - **Development**: `http://localhost:3000/api/v1`
-- **Production**: `https://habesha-ride-backend-v2.onrender.com/api/v1`
+-- **Production**: `https://habesha-ride-backend.onrender.com/api/v1`
 - **Documentation**: `/api-docs` (Swagger UI)
 
 ### 4.2 API Endpoint Structure

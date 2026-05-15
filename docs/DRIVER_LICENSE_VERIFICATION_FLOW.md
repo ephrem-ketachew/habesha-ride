@@ -732,7 +732,7 @@ JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=7d
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/habesha-ride-backend-v2
+MONGODB_URI=mongodb://localhost:27017/habesha-ride-backend
 ```
 
 ### **NPM Dependencies**

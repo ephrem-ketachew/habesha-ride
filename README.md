@@ -1,14 +1,14 @@
-# Habesha Ride v2.0 - Backend API
+ï»¿# Habesha Ride - Backend API
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/habesha-ride-backend-v2)
-[![Code Coverage](https://img.shields.io/badge/coverage-85%25-green)](https://github.com/yourusername/habesha-ride-backend-v2)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/habesha-ride-backend)
+[![Code Coverage](https://img.shields.io/badge/coverage-85%25-green)](https://github.com/yourusername/habesha-ride-backend)
 [![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-5.9.3-blue)](https://www.typescriptlang.org/)
 
 ## ?? Description
 
-**Habesha Ride v2.0** is a robust, secure, and scalable backend API for a **peer-to-peer (P2P) vehicle rental and sales marketplace**. Built with modern technologies and best practices, this API powers a platform where users can list their vehicles for rent or sale, browse available vehicles, and manage their profiles with comprehensive authentication and authorization features.
+**Habesha Ride** is a robust, secure, and scalable backend API for a **peer-to-peer (P2P) vehicle rental and sales marketplace**. Built with modern technologies and best practices, this API powers a platform where users can list their vehicles for rent or sale, browse available vehicles, and manage their profiles with comprehensive authentication and authorization features.
 
 The platform supports both traditional email/password authentication and Google OAuth 2.0, provides secure file uploads to Cloudinary, and implements a complete vehicle management system with role-based access control.
 
@@ -251,8 +251,8 @@ Clone the repository and install dependencies:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/habesha-ride-backend-v2.git
-cd habesha-ride-backend-v2
+git clone https://github.com/yourusername/habesha-ride-backend.git
+cd habesha-ride-backend
 
 # Install dependencies using pnpm
 pnpm install
@@ -279,7 +279,7 @@ CLIENT_URL=http://localhost:5173
 # ====================================
 # DATABASE CONFIGURATION
 # ====================================
-DATABASE_URL=mongodb+srv://username:<PASSWORD>@cluster.mongodb.net/habesha-ride-v2?retryWrites=true&w=majority
+DATABASE_URL=mongodb+srv://username:<PASSWORD>@cluster.mongodb.net/habesha-ride?retryWrites=true&w=majority
 DATABASE_PASSWORD=your_mongodb_password_here
 
 # ====================================
@@ -423,31 +423,31 @@ http://localhost:3000/api/v1
 
 | Method  | Endpoint                 | Auth | Description                            |
 | ------- | ------------------------ | ---- | -------------------------------------- |
-| `POST`  | `/register`              | ?   | Register new user with email/password  |
-| `POST`  | `/login`                 | ?   | Login with email/password              |
-| `GET`   | `/verify-email`          | ?   | Verify email with token (query param)  |
-| `POST`  | `/forgot-password`       | ?   | Request password reset email           |
-| `PATCH` | `/reset-password/:token` | ?   | Reset password with token              |
-| `PATCH` | `/update-password`       | ?   | Update password for authenticated user |
-| `POST`  | `/google`                | ?   | Google OAuth 2.0 authentication        |
-| `GET`   | `/logout`                | ?   | Logout user (clear JWT cookie)         |
+| `POST`  | `/register`              | ?    | Register new user with email/password  |
+| `POST`  | `/login`                 | ?    | Login with email/password              |
+| `GET`   | `/verify-email`          | ?    | Verify email with token (query param)  |
+| `POST`  | `/forgot-password`       | ?    | Request password reset email           |
+| `PATCH` | `/reset-password/:token` | ?    | Reset password with token              |
+| `PATCH` | `/update-password`       | ?    | Update password for authenticated user |
+| `POST`  | `/google`                | ?    | Google OAuth 2.0 authentication        |
+| `GET`   | `/logout`                | ?    | Logout user (clear JWT cookie)         |
 
 ### ?? User Routes (`/api/v1/user`)
 
 | Method  | Endpoint         | Auth | Description                     |
 | ------- | ---------------- | ---- | ------------------------------- |
-| `GET`   | `/userProfile`   | ?   | Get authenticated user profile  |
-| `PATCH` | `/updateProfile` | ?   | Update user profile information |
+| `GET`   | `/userProfile`   | ?    | Get authenticated user profile  |
+| `PATCH` | `/updateProfile` | ?    | Update user profile information |
 
 ### ?? Car Routes (`/api/v1/cars`)
 
 | Method   | Endpoint   | Auth | Description                                         |
 | -------- | ---------- | ---- | --------------------------------------------------- |
-| `POST`   | `/`        | ?   | Create new car listing (with photo upload)          |
-| `GET`    | `/my-cars` | ?   | Get all cars owned by authenticated user            |
-| `GET`    | `/:id`     | ?   | Get car details by ID                               |
-| `PATCH`  | `/:id`     | ?   | Update car details and photos                       |
-| `DELETE` | `/:id`     | ?   | Delete car listing (removes photos from Cloudinary) |
+| `POST`   | `/`        | ?    | Create new car listing (with photo upload)          |
+| `GET`    | `/my-cars` | ?    | Get all cars owned by authenticated user            |
+| `GET`    | `/:id`     | ?    | Get car details by ID                               |
+| `PATCH`  | `/:id`     | ?    | Update car details and photos                       |
+| `DELETE` | `/:id`     | ?    | Delete car listing (removes photos from Cloudinary) |
 
 **File Upload:**
 
@@ -460,75 +460,75 @@ http://localhost:3000/api/v1
 
 | Method | Endpoint | Auth | Description                                         |
 | ------ | -------- | ---- | --------------------------------------------------- |
-| `GET`  | `/`      | ?   | Get all vehicle manufacturers (Toyota, Honda, etc.) |
+| `GET`  | `/`      | ?    | Get all vehicle manufacturers (Toyota, Honda, etc.) |
 
 ### ?? Model Routes (`/api/v1/models`)
 
 | Method | Endpoint           | Auth | Description                                |
 | ------ | ------------------ | ---- | ------------------------------------------ |
-| `GET`  | `/?makeId=:makeId` | ?   | Get all vehicle models for a specific make |
+| `GET`  | `/?makeId=:makeId` | ?    | Get all vehicle models for a specific make |
 
 ---
 
 ## ?? Project Structure
 
 ```
-habesha-ride-backend-v2/
+habesha-ride-backend/
 +-- src/
-¦   +-- _data/                 # Static data files
-¦   ¦   +-- cars.json          # Makes and models seed data
-¦   +-- _seeder/               # Database seeders
-¦   ¦   +-- cars.seeder.ts     # Make/Model seeder
-¦   +-- config/                # Configuration files
-¦   ¦   +-- db.config.ts       # MongoDB connection
-¦   ¦   +-- env.config.ts      # Environment variables
-¦   ¦   +-- logger.config.ts   # Pino logger setup
-¦   +-- controllers/           # Route controllers (HTTP handlers)
-¦   ¦   +-- auth.controller.ts
-¦   ¦   +-- car.controller.ts
-¦   ¦   +-- make.controller.ts
-¦   ¦   +-- model.controller.ts
-¦   ¦   +-- user.controller.ts
-¦   +-- middleware/            # Express middleware
-¦   ¦   +-- auth.middleware.ts      # JWT verification, role checks
-¦   ¦   +-- error.middleware.ts     # Global error handler
-¦   ¦   +-- validate.middleware.ts  # Zod schema validation
-¦   +-- models/                # Mongoose schemas
-¦   ¦   +-- car.model.ts
-¦   ¦   +-- make.model.ts
-¦   ¦   +-- rentalListing.model.ts
-¦   ¦   +-- saleListing.model.ts
-¦   ¦   +-- user.model.ts
-¦   ¦   +-- vehicleModel.model.ts
-¦   +-- routes/                # API routes
-¦   ¦   +-- auth.routes.ts
-¦   ¦   +-- car.routes.ts
-¦   ¦   +-- make.routes.ts
-¦   ¦   +-- model.routes.ts
-¦   ¦   +-- user.routes.ts
-¦   +-- services/              # Business logic layer
-¦   ¦   +-- auth.service.ts
-¦   ¦   +-- car.service.ts
-¦   ¦   +-- user.service.ts
-¦   +-- types/                 # TypeScript type definitions
-¦   +-- utils/                 # Utility functions
-¦   ¦   +-- appError.util.ts        # Custom error class
-¦   ¦   +-- catchAsync.util.ts      # Async error wrapper
-¦   ¦   +-- cloudinary.util.ts      # Cloudinary helpers
-¦   ¦   +-- email.util.ts           # Email sending
-¦   ¦   +-- fileUpload.util.ts      # Multer configuration
-¦   ¦   +-- google.util.ts          # Google OAuth client
-¦   ¦   +-- jwt.util.ts             # JWT sign/verify
-¦   ¦   +-- sanitize.util.ts        # Data sanitization
-¦   ¦   +-- user.util.ts            # User data helpers
-¦   +-- validation/            # Zod validation schemas
-¦   ¦   +-- auth.schema.ts
-¦   ¦   +-- car.validation.ts
-¦   ¦   +-- model.validation.ts
-¦   ¦   +-- user.schema.ts
-¦   +-- views/                 # Email templates (future)
-¦   +-- app.ts                 # Express app configuration
-¦   +-- server.ts              # Server entry point
+ï¿½   +-- _data/                 # Static data files
+ï¿½   ï¿½   +-- cars.json          # Makes and models seed data
+ï¿½   +-- _seeder/               # Database seeders
+ï¿½   ï¿½   +-- cars.seeder.ts     # Make/Model seeder
+ï¿½   +-- config/                # Configuration files
+ï¿½   ï¿½   +-- db.config.ts       # MongoDB connection
+ï¿½   ï¿½   +-- env.config.ts      # Environment variables
+ï¿½   ï¿½   +-- logger.config.ts   # Pino logger setup
+ï¿½   +-- controllers/           # Route controllers (HTTP handlers)
+ï¿½   ï¿½   +-- auth.controller.ts
+ï¿½   ï¿½   +-- car.controller.ts
+ï¿½   ï¿½   +-- make.controller.ts
+ï¿½   ï¿½   +-- model.controller.ts
+ï¿½   ï¿½   +-- user.controller.ts
+ï¿½   +-- middleware/            # Express middleware
+ï¿½   ï¿½   +-- auth.middleware.ts      # JWT verification, role checks
+ï¿½   ï¿½   +-- error.middleware.ts     # Global error handler
+ï¿½   ï¿½   +-- validate.middleware.ts  # Zod schema validation
+ï¿½   +-- models/                # Mongoose schemas
+ï¿½   ï¿½   +-- car.model.ts
+ï¿½   ï¿½   +-- make.model.ts
+ï¿½   ï¿½   +-- rentalListing.model.ts
+ï¿½   ï¿½   +-- saleListing.model.ts
+ï¿½   ï¿½   +-- user.model.ts
+ï¿½   ï¿½   +-- vehicleModel.model.ts
+ï¿½   +-- routes/                # API routes
+ï¿½   ï¿½   +-- auth.routes.ts
+ï¿½   ï¿½   +-- car.routes.ts
+ï¿½   ï¿½   +-- make.routes.ts
+ï¿½   ï¿½   +-- model.routes.ts
+ï¿½   ï¿½   +-- user.routes.ts
+ï¿½   +-- services/              # Business logic layer
+ï¿½   ï¿½   +-- auth.service.ts
+ï¿½   ï¿½   +-- car.service.ts
+ï¿½   ï¿½   +-- user.service.ts
+ï¿½   +-- types/                 # TypeScript type definitions
+ï¿½   +-- utils/                 # Utility functions
+ï¿½   ï¿½   +-- appError.util.ts        # Custom error class
+ï¿½   ï¿½   +-- catchAsync.util.ts      # Async error wrapper
+ï¿½   ï¿½   +-- cloudinary.util.ts      # Cloudinary helpers
+ï¿½   ï¿½   +-- email.util.ts           # Email sending
+ï¿½   ï¿½   +-- fileUpload.util.ts      # Multer configuration
+ï¿½   ï¿½   +-- google.util.ts          # Google OAuth client
+ï¿½   ï¿½   +-- jwt.util.ts             # JWT sign/verify
+ï¿½   ï¿½   +-- sanitize.util.ts        # Data sanitization
+ï¿½   ï¿½   +-- user.util.ts            # User data helpers
+ï¿½   +-- validation/            # Zod validation schemas
+ï¿½   ï¿½   +-- auth.schema.ts
+ï¿½   ï¿½   +-- car.validation.ts
+ï¿½   ï¿½   +-- model.validation.ts
+ï¿½   ï¿½   +-- user.schema.ts
+ï¿½   +-- views/                 # Email templates (future)
+ï¿½   +-- app.ts                 # Express app configuration
+ï¿½   +-- server.ts              # Server entry point
 +-- docs/ARCHITECTURE.md            # System architecture documentation
 +-- docs/REQUEST_LIFECYCLE.md       # Request flow documentation
 +-- docs/DATABASE_ERD.md            # Database entity relationship diagram
@@ -682,7 +682,7 @@ This project is licensed under the **ISC License**.
 If you encounter any issues or have questions:
 
 - ?? Email: support@habesharide.com
-- ?? Issues: [GitHub Issues](https://github.com/yourusername/habesha-ride-backend-v2/issues)
+- ?? Issues: [GitHub Issues](https://github.com/yourusername/habesha-ride-backend/issues)
 - ?? Docs: [Documentation](./docs/ARCHITECTURE.md)
 
 ---
@@ -710,7 +710,6 @@ If you encounter any issues or have questions:
 
 **Built with ?? by the Habesha Ride Team**
 
-[Report Bug](https://github.com/yourusername/habesha-ride-backend-v2/issues) • [Request Feature](https://github.com/yourusername/habesha-ride-backend-v2/issues) • [Documentation](./docs/ARCHITECTURE.md)
+[Report Bug](https://github.com/yourusername/habesha-ride-backend/issues) ï¿½ [Request Feature](https://github.com/yourusername/habesha-ride-backend/issues) ï¿½ [Documentation](./docs/ARCHITECTURE.md)
 
 </div>
-

@@ -4,7 +4,7 @@ import config from './env.config.js';
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'Habesha Ride API v2 MVP',
+    title: 'Habesha Ride API',
     version: '1.0.0',
     description:
       'Backend API for Habesha Ride - A marketplace platform for car rentals and sales',
@@ -19,7 +19,7 @@ const swaggerDefinition = {
       description: 'Development server',
     },
     {
-      url: 'https://habesha-ride-backend-v2.onrender.com/api/v1',
+      url: 'https://habesha-ride-backend.onrender.com/api/v1',
       description: 'Production server',
     },
   ],
