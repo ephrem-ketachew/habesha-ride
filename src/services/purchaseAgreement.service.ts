@@ -1,4 +1,4 @@
-import PDFDocument from 'pdfkit';
+﻿import PDFDocument from 'pdfkit';
 import { cloudinary } from '../utils/cloudinary.util.js';
 import logger from '../config/logger.config.js';
 import SaleReservation from '../models/saleReservation.model.js';
@@ -99,16 +99,16 @@ export const generatePurchaseAgreement = async (
     .text('5. Final settlement and ownership transfer must occur at a Transport Authority office.')
     .text('6. The seller guarantees the vehicle is free of liens and encumbrances.')
     .text('7. The buyer accepts the vehicle in its current condition as described.')
-    .text('8. Cancellation terms are governed by the Kech.ai platform policies.')
+    .text('8. Cancellation terms are governed by the Habesha Ride platform policies.')
     .moveDown();
 
   // Platform Information
   doc.fontSize(14).font('Helvetica-Bold').text('PLATFORM INFORMATION', { underline: true });
   doc.moveDown(0.5);
   doc.fontSize(10).font('Helvetica')
-    .text('This transaction is facilitated by Kech.ai')
-    .text('Website: kech.ai')
-    .text('Email: support@kech.ai')
+    .text('This transaction is facilitated by Habesha Ride')
+    .text('Website: habesharide.com')
+    .text('Email: support@habesharide.com')
     .text('Phone: +251 XXX XXX XXX')
     .moveDown();
 
@@ -137,7 +137,7 @@ export const generatePurchaseAgreement = async (
               resource_type: 'raw',
               public_id: `sale_agreements/${reservation._id}`,
               format: 'pdf',
-              folder: 'kech/sale_agreements',
+              folder: 'habesha-ride/sale_agreements',
             },
             (error, result) => {
               if (error) {

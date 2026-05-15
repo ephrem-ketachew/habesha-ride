@@ -1,7 +1,7 @@
-{
-  "name": "kech-backend-v2",
+﻿{
+  "name": "habesha-ride-backend-v2",
   "version": "1.0.0",
-  "description": "Backend API for Kech.ai v2.0 MVP",
+  "description": "Backend API for Habesha Ride v2.0 MVP",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
@@ -21,7 +21,7 @@
     "format": "prettier --write \"src/**/*.ts\""
   },
   "keywords": [
-    "kech",
+    "habesha-ride",
     "marketplace",
     "api",
     "express",

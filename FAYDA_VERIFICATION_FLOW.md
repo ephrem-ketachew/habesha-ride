@@ -1,8 +1,8 @@
-# Kech.ai Backend v2 - Fayda (eSignet) Identity Verification Flow
+﻿# Habesha Ride Backend v2 - Fayda (eSignet) Identity Verification Flow
 
 ## Fayda OIDC Integration Documentation
 
-This document provides a comprehensive sequence diagram and detailed explanation of the Fayda (eSignet) OIDC identity verification flow in the Kech.ai application. This implementation enables Ethiopian citizens and residents to verify their national ID through the government's Fayda system.
+This document provides a comprehensive sequence diagram and detailed explanation of the Fayda (eSignet) OIDC identity verification flow in the Habesha Ride application. This implementation enables Ethiopian citizens and residents to verify their national ID through the government's Fayda system.
 
 ---
 
@@ -1159,7 +1159,7 @@ Set generous timeout (30 seconds) for Fayda API calls as government systems can 
 
 ## References
 
-- [Kech.ai Verification Standard](./README.md#-kechaiverification-standard)
+- [Habesha Ride Verification Standard](./README.md#habesha-ride-verification-standard)
 - [Identity Verification Implementation Plan](./IDENTITY_VERIFICATION_PLAN.md)
 - [OIDC Specification](https://openid.net/specs/openid-connect-core-1_0.html)
 - [PKCE RFC 7636](https://tools.ietf.org/html/rfc7636)

@@ -1,8 +1,8 @@
-# Kech.ai Backend v2 - Database Schema & Entity Relationship Diagram
+﻿# Habesha Ride Backend v2 - Database Schema & Entity Relationship Diagram
 
 ## Database Schema Documentation
 
-This document provides a comprehensive Entity Relationship Diagram (ERD) and detailed schema documentation for all Mongoose models in the Kech.ai application.
+This document provides a comprehensive Entity Relationship Diagram (ERD) and detailed schema documentation for all Mongoose models in the Habesha Ride application.
 
 ---
 

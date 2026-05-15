@@ -1,8 +1,8 @@
-# Kech.ai Backend v2 - Driver's License Verification Flow
+﻿# Habesha Ride Backend v2 - Driver's License Verification Flow
 
 ## Hybrid Intelligence Architecture Documentation
 
-This document provides a comprehensive sequence diagram and detailed explanation of the Driver's License Verification flow in the Kech.ai application. This implementation enables verified users (via Fayda or Passport) to complete their legal compliance requirements by verifying their driver's license through Google Cloud Vision OCR and fuzzy name matching.
+This document provides a comprehensive sequence diagram and detailed explanation of the Driver's License Verification flow in the Habesha Ride application. This implementation enables verified users (via Fayda or Passport) to complete their legal compliance requirements by verifying their driver's license through Google Cloud Vision OCR and fuzzy name matching.
 
 ---
 
@@ -732,7 +732,7 @@ JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=7d
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/kech-backend-v2
+MONGODB_URI=mongodb://localhost:27017/habesha-ride-backend-v2
 ```
 
 ### **NPM Dependencies**
@@ -1694,5 +1694,5 @@ The Driver's License Verification system provides a robust, cost-effective solut
 
 **Document Version:** 1.0  
 **Last Updated:** December 25, 2025  
-**Maintained By:** Kech.ai Backend Team
+**Maintained By:** Habesha Ride Backend Team
 

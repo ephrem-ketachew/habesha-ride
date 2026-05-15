@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+﻿import express, { Express, Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -97,7 +97,7 @@ app.use('/api/v1/verification', verificationRoutes);
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'success',
-    message: 'Kech.ai v2.0 MVP Backend is running!',
+    message: 'Habesha Ride v2.0 MVP Backend is running!',
   });
 });
 

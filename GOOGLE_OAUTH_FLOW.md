@@ -1,8 +1,8 @@
-# Kech.ai Backend v2 - Google OAuth Authentication Flow
+﻿# Habesha Ride Backend v2 - Google OAuth Authentication Flow
 
 ## Google OAuth 2.0 Integration Documentation
 
-This document provides a comprehensive sequence diagram and detailed explanation of the Google OAuth authentication flow in the Kech.ai application.
+This document provides a comprehensive sequence diagram and detailed explanation of the Google OAuth authentication flow in the Habesha Ride application.
 
 ---
 
@@ -319,7 +319,7 @@ if (user) {
 else {
   user = await User.create({
     firstName: payload.given_name || 'User',
-    lastName: payload.family_name || 'Kech',
+    lastName: payload.family_name || 'Habesha Ride',
     email: payload.email,
     googleId: payload.sub,
     profileImage: payload.picture,

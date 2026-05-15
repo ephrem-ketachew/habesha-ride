@@ -1,4 +1,4 @@
-# Kech.ai v2.0 – Contribution & Git Workflow Guide
+﻿# Habesha Ride v2.0 – Contribution & Git Workflow Guide
 
 This document outlines the **Git branching strategy**, **code contribution workflow**, and **standards** the team must follow.
 

@@ -1,8 +1,8 @@
-# Payment System Architecture - High-Level Design Document
+﻿# Payment System Architecture - High-Level Design Document
 
 ## Document Information
 
-**System**: Kech.ai Car Rental Platform  
+**System**: Habesha Ride Car Rental Platform  
 **Component**: Payment Gateway Integration  
 **Provider**: Chapa (Ethiopian Payment Gateway)  
 **Version**: 1.0  
@@ -30,7 +30,7 @@
 
 ### 1.1 Purpose
 
-This document describes the high-level architecture of the payment processing system integrated into the Kech.ai car rental platform. The system enables secure, automated payment processing for bookings through the Chapa payment gateway.
+This document describes the high-level architecture of the payment processing system integrated into the Habesha Ride car rental platform. The system enables secure, automated payment processing for bookings through the Chapa payment gateway.
 
 ### 1.2 Key Architectural Decisions
 
@@ -475,7 +475,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  E1[Kech Backend]
+  E1[Habesha Ride Backend]
   E1 -- API --> E2[Chapa API]
   E1 -- SMTP/REST --> E3[Email Service (Brevo/Mailtrap)]
 ```
@@ -732,7 +732,7 @@ flowchart TD
 
 - Chapa API Documentation: https://developer.chapa.co/
 - Payment Implementation Plan: `PAYMENT_IMPLEMENTATION_PLAN.md`
-- System Architecture: Kech.ai Backend v2.0
+- System Architecture: Habesha Ride Backend v2.0
 
 ---
 

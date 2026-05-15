@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 import Booking from '../models/booking.model.js';
 import Transaction from '../models/transaction.model.js';
 import User from '../models/user.model.js';
@@ -115,7 +115,7 @@ export const initializePayment = async (bookingId: string, userId: string) => {
     callback_url: config.payment.callbackUrl,
     return_url: config.payment.returnUrl,
     customization: {
-      title: 'Kech Car Rental',
+      title: 'Habesha Ride Car Rental',
       description: `Booking ${bookingId.substring(bookingId.length - 8)}`,
     },
   });

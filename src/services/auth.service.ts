@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+﻿import crypto from 'crypto';
 
 import User from '../models/user.model.js';
 import AppError from '../utils/appError.util.js';
@@ -35,13 +35,13 @@ export const registerUser = async (input: RegisterUserInput) => {
   try {
     const verificationURL = `${config.clientUrl}/verify-email?token=${verificationToken}`;
 
-    const message = `Welcome to Kech.ai! Please verify your email by clicking this link: ${verificationURL}\n\nThis link is valid for 24 hours.`;
+    const message = `Welcome to Habesha Ride! Please verify your email by clicking this link: ${verificationURL}\n\nThis link is valid for 24 hours.`;
 
     await sendEmail({
       to: user.email,
-      subject: 'Verify Your Email for Kech.ai',
+      subject: 'Verify Your Email for Habesha Ride',
       text: message,
-      html: `<p>Welcome to Kech.ai! Please verify your email by clicking the link below:</p>
+      html: `<p>Welcome to Habesha Ride! Please verify your email by clicking the link below:</p>
              <a href="${verificationURL}" target="_blank">Verify Your Email</a>
              <p>This link is valid for 24 hours.</p>`,
     });
@@ -100,13 +100,13 @@ export const loginUser = async (input: LoginUserInput) => {
       try {
         const verificationURL = `${config.clientUrl}/verify-email?token=${verificationToken}`;
 
-        const message = `Welcome to Kech.ai! Please verify your email by clicking this link: ${verificationURL}\n\nThis link is valid for 24 hours.`;
+        const message = `Welcome to Habesha Ride! Please verify your email by clicking this link: ${verificationURL}\n\nThis link is valid for 24 hours.`;
 
         await sendEmail({
           to: user.email,
-          subject: 'Verify Your Email for Kech.ai (New Link)',
+          subject: 'Verify Your Email for Habesha Ride (New Link)',
           text: message,
-          html: `<p>Welcome to Kech.ai! Please verify your email by clicking the link below:</p>
+          html: `<p>Welcome to Habesha Ride! Please verify your email by clicking the link below:</p>
                  <a href="${verificationURL}" target="_blank">Verify Your Email</a>
                  <p>This link is valid for 24 hours.</p>`,
         });
@@ -309,7 +309,7 @@ export const googleAuth = async (code: string) => {
   } else {
     user = await User.create({
       firstName: payload.given_name || 'User',
-      lastName: payload.family_name || 'Kech',
+      lastName: payload.family_name || 'Habesha Ride',
       email: payload.email,
       googleId: payload.sub,
       profileImage: payload.picture,

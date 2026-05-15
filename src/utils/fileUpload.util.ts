@@ -1,4 +1,4 @@
-import { cloudinary } from './cloudinary.util.js';
+﻿import { cloudinary } from './cloudinary.util.js';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 import AppError from './appError.util.js';
@@ -8,7 +8,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req: Request, file: Express.Multer.File) => {
     const userId = req.user?.id || 'misc';
-    const folder = `kech/cars/${userId}`;
+    const folder = `habesha-ride/cars/${userId}`;
 
     const filename = `car-${userId}-${Date.now()}-${Math.round(
       Math.random() * 1e9,
@@ -30,7 +30,7 @@ const userPhotoStorage = new CloudinaryStorage({
   cloudinary,
   params: async (req: Request, file: Express.Multer.File) => {
     const userId = req.user?.id || 'misc';
-    const folder = `kech/users/${userId}`;
+    const folder = `habesha-ride/users/${userId}`;
     const filename = `user-${userId}-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
     return {

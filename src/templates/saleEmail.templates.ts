@@ -1,4 +1,4 @@
-import config from '../config/env.config.js';
+﻿import config from '../config/env.config.js';
 
 const formatCurrency = (amount: number): string => {
   return `${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`;
@@ -137,14 +137,14 @@ export const reservationConfirmationBuyerTemplate = (data: {
                 <p><strong>⚠️ Important:</strong> This reservation expires on <strong>${formatDate(expiresAt)}</strong>. If you don't complete the inspection by then, the reservation will be cancelled and your payment refunded (minus 20% platform fee).</p>
               </div>
 
-              <p>Questions? Contact our support team at <a href="mailto:support@kech.ai">support@kech.ai</a></p>
+              <p>Questions? Contact our support team at <a href="mailto:support@habesharide.com">support@habesharide.com</a></p>
 
-              <p>Best regards,<br>The Kech.ai Team</p>
+              <p>Best regards,<br>The Habesha Ride Team</p>
             </div>
 
             <div class="footer">
-              <p>This is an automated message from Kech.ai. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Kech.ai. All rights reserved.</p>
+              <p>This is an automated message from Habesha Ride. Please do not reply to this email.</p>
+              <p>© ${new Date().getFullYear()} Habesha Ride. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -176,10 +176,10 @@ export const reservationConfirmationBuyerTemplate = (data: {
 
       Important: This reservation expires on ${formatDate(expiresAt)}. If you don't complete the inspection by then, the reservation will be cancelled and your payment refunded (minus 20% platform fee).
 
-      Questions? Contact support@kech.ai
+      Questions? Contact support@habesharide.com
 
       Best regards,
-      The Kech.ai Team
+      The Habesha Ride Team
     `,
   };
 };
@@ -252,14 +252,14 @@ export const reservationExpiryReminderBuyerTemplate = (data: {
                 <p>Please reach out to ${sellerName} immediately to schedule your vehicle inspection. You can find their contact information in your reservation details.</p>
               </div>
 
-              <p>Questions? Contact our support team at <a href="mailto:support@kech.ai">support@kech.ai</a></p>
+              <p>Questions? Contact our support team at <a href="mailto:support@habesharide.com">support@habesharide.com</a></p>
 
-              <p>Best regards,<br>The Kech.ai Team</p>
+              <p>Best regards,<br>The Habesha Ride Team</p>
             </div>
 
             <div class="footer">
-              <p>This is an automated message from Kech.ai. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Kech.ai. All rights reserved.</p>
+              <p>This is an automated message from Habesha Ride. Please do not reply to this email.</p>
+              <p>© ${new Date().getFullYear()} Habesha Ride. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -287,10 +287,10 @@ export const reservationExpiryReminderBuyerTemplate = (data: {
       Contact the Seller:
       Please reach out to ${sellerName} immediately to schedule your vehicle inspection.
 
-      Questions? Contact support@kech.ai
+      Questions? Contact support@habesharide.com
 
       Best regards,
-      The Kech.ai Team
+      The Habesha Ride Team
     `,
   };
 };
@@ -363,14 +363,14 @@ export const reservationCancelledBuyerTemplate = (data: {
                 <p>If you'd like to reserve this or another vehicle, you can browse our listings and start a new reservation anytime.</p>
               </div>
 
-              <p>If you have any questions about this cancellation or need assistance, please contact our support team at <a href="mailto:support@kech.ai">support@kech.ai</a></p>
+              <p>If you have any questions about this cancellation or need assistance, please contact our support team at <a href="mailto:support@habesharide.com">support@habesharide.com</a></p>
 
-              <p>Best regards,<br>The Kech.ai Team</p>
+              <p>Best regards,<br>The Habesha Ride Team</p>
             </div>
 
             <div class="footer">
-              <p>This is an automated message from Kech.ai. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Kech.ai. All rights reserved.</p>
+              <p>This is an automated message from Habesha Ride. Please do not reply to this email.</p>
+              <p>© ${new Date().getFullYear()} Habesha Ride. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -403,10 +403,10 @@ export const reservationCancelledBuyerTemplate = (data: {
       Next Steps:
       If you'd like to reserve this or another vehicle, you can browse our listings and start a new reservation anytime.
 
-      Questions? Contact support@kech.ai
+      Questions? Contact support@habesharide.com
 
       Best regards,
-      The Kech.ai Team
+      The Habesha Ride Team
     `,
   };
 };
@@ -477,7 +477,7 @@ export const newReservationAlertSellerTemplate = (data: {
                   <li><strong>Contact the buyer immediately</strong> using the details above</li>
                   <li><strong>Agree on a meeting time and place</strong> for vehicle inspection</li>
                   <li><strong>Prepare the vehicle</strong> and all necessary documentation</li>
-                  <li><strong>Schedule the inspection</strong> through the Kech.ai platform</li>
+                  <li><strong>Schedule the inspection</strong> through the Habesha Ride platform</li>
                 </ol>
               </div>
 
@@ -499,14 +499,14 @@ export const newReservationAlertSellerTemplate = (data: {
                 </ul>
               </div>
 
-              <p>Questions? Contact our seller support team at <a href="mailto:sellers@kech.ai">sellers@kech.ai</a></p>
+              <p>Questions? Contact our seller support team at <a href="mailto:sellers@habesharide.com">sellers@habesharide.com</a></p>
 
-              <p>Best regards,<br>The Kech.ai Seller Team</p>
+              <p>Best regards,<br>The Habesha Ride Seller Team</p>
             </div>
 
             <div class="footer">
-              <p>This is an automated message from Kech.ai. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Kech.ai. All rights reserved.</p>
+              <p>This is an automated message from Habesha Ride. Please do not reply to this email.</p>
+              <p>© ${new Date().getFullYear()} Habesha Ride. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -533,7 +533,7 @@ export const newReservationAlertSellerTemplate = (data: {
       1. Contact the buyer immediately using the details above
       2. Agree on a meeting time and place for vehicle inspection
       3. Prepare the vehicle and all necessary documentation
-      4. Schedule the inspection through the Kech.ai platform
+      4. Schedule the inspection through the Habesha Ride platform
 
       Important Deadlines:
       - The reservation expires in 48 hours if no inspection is scheduled
@@ -544,10 +544,10 @@ export const newReservationAlertSellerTemplate = (data: {
       - You receive: ${formatCurrency(salePrice - salePrice * 0.02)} (minus 2% platform fee)
       - Platform fee: ${formatCurrency(salePrice * 0.02)}
 
-      Questions? Contact sellers@kech.ai
+      Questions? Contact sellers@habesharide.com
 
       Best regards,
-      The Kech.ai Seller Team
+      The Habesha Ride Seller Team
     `,
   };
 };
@@ -612,14 +612,14 @@ export const reservationExpiredSellerTemplate = (data: {
                 </ul>
               </div>
 
-              <p>If you have any questions or need assistance with your listing, please contact our seller support team at <a href="mailto:sellers@kech.ai">sellers@kech.ai</a></p>
+              <p>If you have any questions or need assistance with your listing, please contact our seller support team at <a href="mailto:sellers@habesharide.com">sellers@habesharide.com</a></p>
 
-              <p>Best regards,<br>The Kech.ai Seller Team</p>
+              <p>Best regards,<br>The Habesha Ride Seller Team</p>
             </div>
 
             <div class="footer">
-              <p>This is an automated message from Kech.ai. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} Kech.ai. All rights reserved.</p>
+              <p>This is an automated message from Habesha Ride. Please do not reply to this email.</p>
+              <p>© ${new Date().getFullYear()} Habesha Ride. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -650,10 +650,10 @@ export const reservationExpiredSellerTemplate = (data: {
       - Ensure your vehicle photos are clear and comprehensive
       - Provide detailed vehicle information and history
 
-      Questions? Contact sellers@kech.ai
+      Questions? Contact sellers@habesharide.com
 
       Best regards,
-      The Kech.ai Seller Team
+      The Habesha Ride Seller Team
     `,
   };
 };

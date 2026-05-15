@@ -1,16 +1,16 @@
-import swaggerJsdoc from 'swagger-jsdoc';
+﻿import swaggerJsdoc from 'swagger-jsdoc';
 import config from './env.config.js';
 
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'Kech.ai API v2 MVP',
+    title: 'Habesha Ride API v2 MVP',
     version: '1.0.0',
     description:
-      'Backend API for Kech.ai - A marketplace platform for car rentals and sales',
+      'Backend API for Habesha Ride - A marketplace platform for car rentals and sales',
     contact: {
       name: 'CCTechEt',
-      email: 'support@kech.ai',
+      email: 'support@habesharide.com',
     },
   },
   servers: [
@@ -19,7 +19,7 @@ const swaggerDefinition = {
       description: 'Development server',
     },
     {
-      url: 'https://kech-backend-v2.onrender.com/api/v1',
+      url: 'https://habesha-ride-backend-v2.onrender.com/api/v1',
       description: 'Production server',
     },
   ],

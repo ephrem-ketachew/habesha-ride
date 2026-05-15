@@ -1,6 +1,6 @@
-# Swagger API Documentation
+﻿# Swagger API Documentation
 
-This document provides information about the Swagger/OpenAPI documentation integrated into the Kech.ai API v2 MVP.
+This document provides information about the Swagger/OpenAPI documentation integrated into the Habesha Ride API v2 MVP.
 
 ## Overview
 
@@ -19,7 +19,7 @@ http://localhost:3000/api-docs
 The production API documentation is available at:
 
 ```
-https://kech-backend-v2.onrender.com/api-docs
+https://habesha-ride-backend-v2.onrender.com/api-docs
 ```
 
 ## Features
@@ -84,7 +84,7 @@ http://localhost:3000/api/v1
 
 ### Production
 ```
-https://kech-backend-v2.onrender.com/api/v1
+https://habesha-ride-backend-v2.onrender.com/api/v1
 ```
 
 ## Schema Definitions
@@ -296,5 +296,5 @@ The Swagger configuration is located in `src/config/swagger.ts`. To modify:
 For issues or questions:
 - Check the Swagger UI for detailed endpoint documentation
 - Review error responses for specific error messages
-- Contact: support@kech.ai
+- Contact: support@habesharide.com
 

@@ -1,4 +1,4 @@
-import config from '../config/env.config.js';
+﻿import config from '../config/env.config.js';
 import { IFinancialBreakdown } from '../types/transaction.types.js';
 
 const formatCurrency = (amount: number): string => {
@@ -75,10 +75,10 @@ Your booking is now confirmed. You can start your rental on the specified date.
 
 View your booking details: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
-Thank you for choosing Kech.ai!
+Thank you for choosing Habesha Ride!
 
 Best regards,
-The Kech.ai Team
+The Habesha Ride Team
     `.trim(),
     html: `
 <!DOCTYPE html>
@@ -165,7 +165,7 @@ The Kech.ai Team
       </p>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} Kech.ai - Car Rental Platform<br>
+      <p>© ${new Date().getFullYear()} Habesha Ride - Car Rental Platform<br>
       This is an automated message, please do not reply to this email.</p>
     </div>
   </div>
@@ -203,7 +203,7 @@ Retry payment: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 If you continue to experience issues, please contact our support team.
 
 Best regards,
-The Kech.ai Team
+The Habesha Ride Team
     `.trim(),
     html: `
 <!DOCTYPE html>
@@ -242,7 +242,7 @@ The Kech.ai Team
       </p>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} Kech.ai - Car Rental Platform<br>
+      <p>© ${new Date().getFullYear()} Habesha Ride - Car Rental Platform<br>
       This is an automated message, please do not reply to this email.</p>
     </div>
   </div>
@@ -288,7 +288,7 @@ View your booking: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 Thank you for your patience.
 
 Best regards,
-The Kech.ai Team
+The Habesha Ride Team
     `.trim(),
     html: `
 <!DOCTYPE html>
@@ -329,7 +329,7 @@ The Kech.ai Team
       </p>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} Kech.ai - Car Rental Platform<br>
+      <p>© ${new Date().getFullYear()} Habesha Ride - Car Rental Platform<br>
       This is an automated message, please do not reply to this email.</p>
     </div>
   </div>
@@ -365,10 +365,10 @@ The funds have been returned to your original payment method.
 
 View your booking: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
-Thank you for using Kech.ai!
+Thank you for using Habesha Ride!
 
 Best regards,
-The Kech.ai Team
+The Habesha Ride Team
     `.trim(),
     html: `
 <!DOCTYPE html>
@@ -403,11 +403,11 @@ The Kech.ai Team
       </center>
 
       <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
-        Thank you for using Kech.ai. We hope to serve you again soon!
+        Thank you for using Habesha Ride. We hope to serve you again soon!
       </p>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} Kech.ai - Car Rental Platform<br>
+      <p>© ${new Date().getFullYear()} Habesha Ride - Car Rental Platform<br>
       This is an automated message, please do not reply to this email.</p>
     </div>
   </div>
@@ -446,7 +446,7 @@ Complete your payment to confirm your reservation.
 Complete payment: ${config.clientUrl}/dashboard/user/bookings/${bookingId}
 
 Best regards,
-The Kech.ai Team
+The Habesha Ride Team
     `.trim(),
     html: `
 <!DOCTYPE html>
@@ -486,7 +486,7 @@ The Kech.ai Team
       </p>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} Kech.ai - Car Rental Platform<br>
+      <p>© ${new Date().getFullYear()} Habesha Ride - Car Rental Platform<br>
       This is an automated message, please do not reply to this email.</p>
     </div>
   </div>

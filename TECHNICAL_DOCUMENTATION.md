@@ -1,4 +1,4 @@
-# Kech.ai Backend v2.0 - Technical Documentation
+﻿# Habesha Ride Backend v2.0 - Technical Documentation
 
 ## Executive Technical Overview
 
@@ -25,7 +25,7 @@
 
 ### 1.1 High-Level Architecture
 
-The Kech.ai backend follows a **3-tier layered architecture** pattern with clear separation of concerns:
+The Habesha Ride backend follows a **3-tier layered architecture** pattern with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -176,7 +176,7 @@ The Kech.ai backend follows a **3-tier layered architecture** pattern with clear
 ### 2.1 Directory Structure
 
 ```
-kech-backend-v2/
+habesha-ride-backend-v2/
 ├── src/                          # Source code directory
 │   ├── _data/                    # Static data files (JSON)
 │   │   ├── cars.json            # Vehicle makes/models seed data
@@ -654,7 +654,7 @@ JSON Response Sent to Client
 #### **API Base URLs**
 
 - **Development**: `http://localhost:3000/api/v1`
-- **Production**: `https://kech-backend-v2.onrender.com/api/v1`
+- **Production**: `https://habesha-ride-backend-v2.onrender.com/api/v1`
 - **Documentation**: `/api-docs` (Swagger UI)
 
 ### 4.2 API Endpoint Structure
@@ -2139,7 +2139,7 @@ Technical debt refers to the accumulation of suboptimal technical decisions, sho
 
 ## Conclusion
 
-This technical documentation provides a comprehensive overview of the Kech.ai Backend v2.0 system architecture, design decisions, and operational requirements. The system is designed with scalability, maintainability, and security as core principles, with clear paths for growth from MVP to enterprise scale.
+This technical documentation provides a comprehensive overview of the Habesha Ride Backend v2.0 system architecture, design decisions, and operational requirements. The system is designed with scalability, maintainability, and security as core principles, with clear paths for growth from MVP to enterprise scale.
 
 ### Key Takeaways
 

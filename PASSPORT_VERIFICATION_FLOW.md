@@ -1,8 +1,8 @@
-# Kech.ai Backend v2 - Passport Verification Flow
+﻿# Habesha Ride Backend v2 - Passport Verification Flow
 
 ## Hybrid Intelligence Architecture Documentation
 
-This document provides a comprehensive sequence diagram and detailed explanation of the Passport Verification flow in the Kech.ai application. This implementation enables non-local customers (foreigners) to verify their identity using passport OCR and biometric face matching through Google Cloud Vision API and AWS Rekognition.
+This document provides a comprehensive sequence diagram and detailed explanation of the Passport Verification flow in the Habesha Ride application. This implementation enables non-local customers (foreigners) to verify their identity using passport OCR and biometric face matching through Google Cloud Vision API and AWS Rekognition.
 
 ---
 
@@ -1246,8 +1246,8 @@ passport: {
 **Step 1: Create Project**
 
 ```bash
-gcloud projects create kech-passport-verification
-gcloud config set project kech-passport-verification
+gcloud projects create habesha-ride-passport-verification
+gcloud config set project habesha-ride-passport-verification
 ```
 
 **Step 2: Enable Vision API**
@@ -1266,8 +1266,8 @@ gcloud iam service-accounts create passport-ocr \
 **Step 4: Grant Permissions**
 
 ```bash
-gcloud projects add-iam-policy-binding kech-passport-verification \
-  --member="serviceAccount:passport-ocr@kech-passport-verification.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding habesha-ride-passport-verification \
+  --member="serviceAccount:passport-ocr@habesha-ride-passport-verification.iam.gserviceaccount.com" \
   --role="roles/cloudvision.user"
 ```
 
@@ -1275,7 +1275,7 @@ gcloud projects add-iam-policy-binding kech-passport-verification \
 
 ```bash
 gcloud iam service-accounts keys create passport-ocr-key.json \
-  --iam-account=passport-ocr@kech-passport-verification.iam.gserviceaccount.com
+  --iam-account=passport-ocr@habesha-ride-passport-verification.iam.gserviceaccount.com
 ```
 
 **Step 6: Encode Key to Base64**
@@ -1295,21 +1295,21 @@ base64 -w 0 passport-ocr-key.json > passport-ocr-key.base64
 **Step 1: Create IAM User**
 
 ```bash
-aws iam create-user --user-name kech-passport-rekognition
+aws iam create-user --user-name habesha-ride-passport-rekognition
 ```
 
 **Step 2: Attach Policy**
 
 ```bash
 aws iam attach-user-policy \
-  --user-name kech-passport-rekognition \
+  --user-name habesha-ride-passport-rekognition \
   --policy-arn arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
 ```
 
 **Step 3: Create Access Key**
 
 ```bash
-aws iam create-access-key --user-name kech-passport-rekognition
+aws iam create-access-key --user-name habesha-ride-passport-rekognition
 ```
 
 **Step 4: Save Credentials**
@@ -1807,7 +1807,7 @@ pnpm add -D @types/multer
 - [MRZ npm Package](https://www.npmjs.com/package/mrz)
 - [Sharp Image Processing](https://sharp.pixelplumbing.com/)
 - [ICAO Doc 9303 (MRZ Standard)](https://www.icao.int/publications/Documents/9303_p3_cons_en.pdf)
-- [Kech.ai Verification Standard](./README.md)
+- [Habesha Ride Verification Standard](./README.md)
 
 ---
 

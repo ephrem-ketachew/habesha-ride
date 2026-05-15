@@ -1,4 +1,4 @@
-import Car from '../models/car.model.js';
+﻿import Car from '../models/car.model.js';
 import { CreateCarInput } from '../validation/car.validation.js';
 import { UpdateCarInput } from '../validation/car.validation.js';
 import { deleteCloudinaryResources } from '../utils/cloudinary.util.js';
@@ -245,7 +245,7 @@ export const updateCarVerificationStatus = async (
     if (status === 'approved') {
       await sendEmail({
         to: owner.email,
-        subject: '🎉 Your Car is Approved on Kech.ai!',
+        subject: '🎉 Your Car is Approved on Habesha Ride!',
         text: `Hello ${owner.fullName},\n\nGreat news! Your ${carName} has been approved by our team. It is now eligible to be listed for rent or sale.\n\nLog in to create your listings now!`,
         html: `
           <h3>Great news, ${owner.fullName}!</h3>

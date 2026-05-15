@@ -1,8 +1,8 @@
-# Kech.ai Backend v2 - Request Lifecycle Documentation
+﻿# Habesha Ride Backend v2 - Request Lifecycle Documentation
 
 ## Complete Request Flow: Route → Controller → Service → Model
 
-This document illustrates the complete request lifecycle in the Kech.ai backend, showing how a request flows through various layers and how errors are handled at each stage.
+This document illustrates the complete request lifecycle in the Habesha Ride backend, showing how a request flows through various layers and how errors are handled at each stage.
 
 ---
 
@@ -289,7 +289,7 @@ export const registerUser = async (input: RegisterUserInput) => {
     const verificationURL = `${config.clientUrl}/verify-email?token=${verificationToken}`;
     await sendEmail({
       to: user.email,
-      subject: 'Verify Your Email for Kech.ai',
+      subject: 'Verify Your Email for Habesha Ride',
       html: `<a href="${verificationURL}">Verify Your Email</a>`,
     });
   } catch (emailError) {

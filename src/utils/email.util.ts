@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+﻿import nodemailer from 'nodemailer';
 import config from '../config/env.config.js';
 import logger from '../config/logger.config.js';
 import { MailOptions } from '../types/email.types.js';
@@ -50,7 +50,7 @@ export const sendEmail = async (options: MailOptions) => {
 
   try {
     const mailOptionsWithFrom = {
-      from: `Kech.ai <${config.emailFrom}>`,
+      from: `Habesha Ride <${config.emailFrom}>`,
       to: options.to,
       subject: options.subject,
       text: options.text,

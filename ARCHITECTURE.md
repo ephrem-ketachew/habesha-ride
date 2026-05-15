@@ -1,4 +1,4 @@
-# Kech.ai Backend v2 - System Architecture
+﻿# Habesha Ride Backend v2 - System Architecture
 
 ## High-Level System Architecture
 
@@ -34,7 +34,7 @@ graph TD
 
 ## System Overview
 
-**Kech.ai** is a comprehensive car rental and sales platform built with modern web technologies. The system allows users to list, browse, and manage vehicles for rental or sale.
+**Habesha Ride** is a comprehensive car rental and sales platform built with modern web technologies. The system allows users to list, browse, and manage vehicles for rental or sale.
 
 ### Core Components
 
